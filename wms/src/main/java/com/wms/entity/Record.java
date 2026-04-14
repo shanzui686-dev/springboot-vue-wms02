@@ -44,6 +44,10 @@ public class Record implements Serializable {
     @Schema(description = "备注")
     private String remark;
 
+    @Schema(description = "审核状态(0:待审核, 1:已完成, 2:已拒绝)")
+    @TableField("status")
+    private Integer status;
+
     public Integer getId() {
         return id;
     }
@@ -99,6 +103,14 @@ public class Record implements Serializable {
     public void setRemark(String remark) {
         this.remark = remark;
     }
+    
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
 
     @Override
     public String toString() {
@@ -110,6 +122,7 @@ public class Record implements Serializable {
             ", count = " + count +
             ", createtime = " + createtime +
             ", remark = " + remark +
+            ", status = " + status +
         "}";
     }
 }

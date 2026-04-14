@@ -110,13 +110,16 @@ public class RecordController {
         // 设置操作时间为当前时间
         record.setCreatetime(LocalDateTime.now());
         
+        // 设置状态为待审核(0)
+        record.setStatus(0);
+        
         return recordService.save(record)?Result.suc():Result.fail();
     }
     
-    // 出库
+    // 出库申请（仅插入记录，不扣减库存）
     @PostMapping("/out")
     public Result out(@RequestBody Record record){
-        System.out.println("========== 出库记录 ==========");
+        System.out.println("========== 出库申请 ==========");
         System.out.println("完整记录: " + record);
         System.out.println("商品ID: " + record.getGoods());
         System.out.println("申请人ID (userId): " + record.getUserId());
@@ -137,24 +140,55 @@ public class RecordController {
             return Result.fail("商品不存在");
         }
         
-        System.out.println("原数量: " + goods.getCount());
-        System.out.println("出库数量: " + record.getCount());
+        System.out.println("当前库存: " + goods.getCount());
+        System.out.println("申请出库数量: " + record.getCount());
         
+        // 检查库存是否充足（仅做预检查，不实际扣减）
         if(goods.getCount() < record.getCount()){
             return Result.fail("库存不足！当前库存：" + goods.getCount());
         }
-        
-        int num = goods.getCount() - record.getCount();
-        goods.setCount(num);
-        
-        boolean updated = goodsService.updateById(goods);
-        System.out.println("更新结果: " + updated);
-        System.out.println("新数量: " + goods.getCount());
         
         // 设置操作时间为当前时间，出库数量存为负数
         record.setCount(-record.getCount());
         record.setCreatetime(LocalDateTime.now());
         
+        // 设置状态为待审核(0)
+        record.setStatus(0);
+        
         return recordService.save(record)?Result.suc():Result.fail();
+    }
+    
+    // 确认出库（管理员审核通过）
+    @PostMapping("/confirm")
+    public Result confirm(@RequestBody HashMap<String, Object> params){
+        Integer recordId = (Integer) params.get("recordId");
+        
+        if(recordId == null){
+            return Result.fail("记录ID不能为空");
+        }
+        
+        try {
+            boolean success = recordService.confirmRecord(recordId);
+            return success ? Result.suc() : Result.fail();
+        } catch (RuntimeException e) {
+            return Result.fail(e.getMessage());
+        }
+    }
+    
+    // 拒绝出库（管理员审核拒绝）
+    @PostMapping("/reject")
+    public Result reject(@RequestBody HashMap<String, Object> params){
+        Integer recordId = (Integer) params.get("recordId");
+        
+        if(recordId == null){
+            return Result.fail("记录ID不能为空");
+        }
+        
+        try {
+            boolean success = recordService.rejectRecord(recordId);
+            return success ? Result.suc() : Result.fail();
+        } catch (RuntimeException e) {
+            return Result.fail(e.getMessage());
+        }
     }
 }

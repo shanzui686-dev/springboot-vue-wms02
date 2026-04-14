@@ -36,6 +36,10 @@ public class Goods implements Serializable {
     @Schema(description = "数量")
     private Integer count;
 
+    @Schema(description = "预警下限")
+    @TableField("min_count")
+    private Integer minCount;
+
     @Schema(description = "备注")
     private String remark;
 
@@ -79,6 +83,14 @@ public class Goods implements Serializable {
         this.count = count;
     }
 
+    public Integer getMinCount() {
+        return minCount;
+    }
+
+    public void setMinCount(Integer minCount) {
+        this.minCount = minCount;
+    }
+
     public String getRemark() {
         return remark;
     }
@@ -95,6 +107,7 @@ public class Goods implements Serializable {
             ", storage = " + storage +
             ", goodsType = " + goodsType +
             ", count = " + count +
+            ", minCount = " + minCount +
             ", remark = " + remark +
         "}";
     }
