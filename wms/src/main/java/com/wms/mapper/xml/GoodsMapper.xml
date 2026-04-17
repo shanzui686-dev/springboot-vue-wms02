@@ -2,4 +2,15 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wms.mapper.GoodsMapper">
 
+    <!-- 查询近30天各商品的销售量 -->
+    <select id="selectRecentSales" resultType="java.util.HashMap">
+        SELECT
+            sd.goods_id AS goodsId,
+            SUM(sd.count) AS totalSales
+        FROM sales_detail sd
+        INNER JOIN sales s ON sd.sales_id = s.id
+        WHERE s.create_time &gt;= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY sd.goods_id
+    </select>
+
 </mapper>

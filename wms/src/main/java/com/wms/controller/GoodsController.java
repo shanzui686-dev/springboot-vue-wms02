@@ -66,4 +66,14 @@ public class GoodsController {
         IPage result=goodsService.page(page,lambdaQueryWrapper);
         return Result.suc(result.getRecords(),result.getTotal());
     }
+
+    /**
+     * 商品补货建议接口
+     * @param purchaseDays 预计采购周期（天），默认7天
+     * @return 补货建议列表
+     */
+    @GetMapping("/suggestRestock")
+    public Result suggestRestock(@RequestParam(required = false, defaultValue = "7") Integer purchaseDays){
+        return Result.suc(goodsService.suggestRestock(purchaseDays));
+    }
 }
