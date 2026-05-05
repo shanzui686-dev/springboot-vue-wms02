@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.wms.common.Log;
 import com.wms.common.QueryPageParam;
 import com.wms.common.Result;
 import com.wms.entity.Goodstype;
@@ -29,16 +30,19 @@ public class GoodstypeController {
     @Autowired
     private IGoodstypeService goodstypeService;
     //新增
+    @Log("新增物品分类")
     @PostMapping("/save")
     public Result save(@RequestBody Goodstype goodstype){
         return goodstypeService.save(goodstype)?Result.suc():Result.fail();
     }
     //更新
+    @Log("更新物品分类")
     @PostMapping("/update")
     public Result update(@RequestBody Goodstype goodstype){
         return goodstypeService.updateById(goodstype)?Result.suc():Result.fail();
     }
     //删除
+    @Log("删除物品分类")
     @GetMapping("/del")
     public Result del(@RequestParam String id){
         return goodstypeService.removeById(id)?Result.suc():Result.fail();
@@ -64,6 +68,16 @@ public class GoodstypeController {
     public Result list(){
         List list = goodstypeService.list();
         // 在内存中过滤包含 roleId 权限的菜单
+        return Result.suc(list);
+    }
+    
+    /**
+     * 获取所有分类的键值对（用于前端下拉框）
+     * @return 分类列表（包含id和name）
+     */
+    @GetMapping("/listAll")
+    public Result listAll(){
+        List<Goodstype> list = goodstypeService.list();
         return Result.suc(list);
     }
 }

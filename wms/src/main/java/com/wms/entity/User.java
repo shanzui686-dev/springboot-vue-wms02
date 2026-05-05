@@ -8,6 +8,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * <p>
@@ -50,7 +51,8 @@ public class User implements Serializable {
 
     @ApiModelProperty(value = "是否有效，Y有效，其他无效")
     @TableField("isValid")
-    private String isvalid;
+    @JsonProperty("isValid")
+    private String isValid;
 
 
 }

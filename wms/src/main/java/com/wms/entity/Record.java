@@ -48,6 +48,14 @@ public class Record implements Serializable {
     @TableField("status")
     private Integer status;
 
+    @Schema(description = "操作类型（如：采购入库、销售出库、退货入库、盘点盈亏等）")
+    @TableField("operation_type")
+    private String operationType;
+
+    @Schema(description = "关联单据流水号")
+    @TableField("ref_order_num")
+    private String refOrderNum;
+
     public Integer getId() {
         return id;
     }
@@ -112,6 +120,22 @@ public class Record implements Serializable {
         this.status = status;
     }
 
+    public String getOperationType() {
+        return operationType;
+    }
+
+    public void setOperationType(String operationType) {
+        this.operationType = operationType;
+    }
+
+    public String getRefOrderNum() {
+        return refOrderNum;
+    }
+
+    public void setRefOrderNum(String refOrderNum) {
+        this.refOrderNum = refOrderNum;
+    }
+
     @Override
     public String toString() {
         return "Record{" +
@@ -123,6 +147,8 @@ public class Record implements Serializable {
             ", createtime = " + createtime +
             ", remark = " + remark +
             ", status = " + status +
+            ", operationType = " + operationType +
+            ", refOrderNum = " + refOrderNum +
         "}";
     }
 }

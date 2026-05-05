@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.wms.common.Log;
 import com.wms.common.QueryPageParam;
 import com.wms.common.Result;
 import com.wms.entity.Menu;
@@ -31,16 +32,19 @@ public class StorageController {
     @Autowired
     private IStorageService storageService;
     //新增
+    @Log("新增仓库")
     @PostMapping("/save")
     public Result save(@RequestBody Storage storage){
         return storageService.save(storage)?Result.suc():Result.fail();
     }
     //更新
+    @Log("更新仓库")
     @PostMapping("/update")
     public Result update(@RequestBody Storage storage){
         return storageService.updateById(storage)?Result.suc():Result.fail();
     }
     //删除
+    @Log("删除仓库")
     @GetMapping("/del")
     public Result del(@RequestParam String id){
         return storageService.removeById(id)?Result.suc():Result.fail();

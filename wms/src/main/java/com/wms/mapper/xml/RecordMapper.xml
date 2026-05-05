@@ -13,6 +13,8 @@
         <result column="remark" property="remark" />
         <result column="username" property="username" />
         <result column="adminname" property="adminname" />
+        <result column="operation_type" property="operationType" />
+        <result column="ref_order_num" property="refOrderNum" />
     </resultMap>
 
     <!-- 自定义分页查询 -->

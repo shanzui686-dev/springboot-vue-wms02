@@ -1,8 +1,10 @@
 package com.wms.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
@@ -28,6 +30,10 @@ public class Goodstype implements Serializable {
     @Schema(description = "备注")
     private String remark;
 
+    @Schema(description = "创建时间")
+    @TableField("create_time")
+    private LocalDateTime createTime;
+
     public Integer getId() {
         return id;
     }
@@ -52,12 +58,21 @@ public class Goodstype implements Serializable {
         this.remark = remark;
     }
 
+    public LocalDateTime getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(LocalDateTime createTime) {
+        this.createTime = createTime;
+    }
+
     @Override
     public String toString() {
         return "Goodstype{" +
             "id = " + id +
             ", name = " + name +
             ", remark = " + remark +
+            ", createTime = " + createTime +
         "}";
     }
 }

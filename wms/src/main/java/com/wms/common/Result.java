@@ -32,4 +32,14 @@ public class Result {
     public static Result suc(Object data,Long total){
         return result(200,"成功",total,data);
     }
+
+    /**
+     * 设置消息并返回当前对象（支持链式调用）
+     * @param msg 消息内容
+     * @return 当前Result对象
+     */
+    public Result msg(String msg){
+        this.msg = msg;
+        return this;
+    }
 }

@@ -1,6 +1,7 @@
 package com.wms.mapper;
 
 import com.wms.entity.Record;
+import com.wms.entity.RecordRes;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
@@ -16,5 +17,5 @@ import org.apache.ibatis.annotations.Param;
  */
 @Mapper
 public interface RecordMapper extends BaseMapper<Record> {
-    Page<Record> pageCC(Page page, @Param("ew") Object queryWrapper);
+    Page<RecordRes> pageCC(Page page, @Param("ew") Object queryWrapper);
 }

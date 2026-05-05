@@ -13,4 +13,44 @@
         GROUP BY sd.goods_id
     </select>
 
+    <!-- 分页查询商品（包含供应商名称、分类名称、仓库名称） -->
+    <select id="selectGoodsWithSupplier" resultType="com.wms.entity.GoodsVO">
+        SELECT
+            g.id,
+            g.name,
+            g.storage,
+            g.goodsType,
+            g.count,
+            g.min_count AS minCount,
+            g.barcode,
+            g.specs,
+            g.unit,
+            g.retail_price AS retailPrice,
+            g.purchase_price AS purchasePrice,
+            g.supplier_id AS supplierId,
+            s.name AS supplierName,
+            gt.name AS categoryName,
+            st.name AS warehouseName,
+            g.remark
+        FROM goods g
+        LEFT JOIN supplier s ON g.supplier_id = s.id
+        LEFT JOIN goodstype gt ON g.goodsType = gt.id
+        LEFT JOIN storage st ON g.storage = st.id
+        <where>
+            <if test="name != null and name != ''">
+                AND g.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="goodsType != null">
+                AND g.goodsType = #{goodsType}
+            </if>
+            <if test="storage != null">
+                AND g.storage = #{storage}
+            </if>
+            <if test="showUrgentOnly != null and showUrgentOnly == true">
+                AND g.count &lt;= g.min_count
+            </if>
+        </where>
+        ORDER BY g.id DESC
+    </select>
+
 </mapper>
