@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wms.mapper.SalesMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="SalesVOResultMap" type="com.wms.entity.SalesVO">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="cashier_name" property="cashierName" />
+        <result column="total_amount" property="totalAmount" />
+        <result column="real_amount" property="realAmount" />
+        <result column="change_amount" property="changeAmount" />
+        <result column="order_num" property="orderNum" />
+        <result column="create_time" property="createTime" />
+        <result column="return_status" property="returnStatus" />
+    </resultMap>
+
+    <!-- 分页查询销售单列表（连表查询收银员姓名和退货状态） -->
+    <select id="selectSalesPage" resultMap="SalesVOResultMap">
+        SELECT
+            s.id,
+            s.user_id,
+            u.name AS cashier_name,
+            s.total_amount,
+            s.real_amount,
+            s.change_amount,
+            IFNULL(s.order_num, CONCAT('SO', LPAD(s.id, 8, '0'))) AS order_num,
+            s.create_time,
+            CASE 
+                WHEN sr.id IS NOT NULL AND sr.status = 1 THEN 2
+                WHEN sr.id IS NOT NULL AND sr.status = 0 THEN 1
+                ELSE 0
+            END AS return_status
+        FROM sales s
+        LEFT JOIN user u ON s.user_id = u.id
+        LEFT JOIN sales_return sr ON s.id = sr.sales_id
+        <where>
+            <if test="orderNum != null and orderNum != ''">
+                AND (s.order_num LIKE CONCAT('%', #{orderNum}, '%') 
+                     OR CONCAT('SO', LPAD(s.id, 8, '0')) LIKE CONCAT('%', #{orderNum}, '%'))
+            </if>
+            <if test="startDate != null and startDate != ''">
+                AND s.create_time &gt;= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND s.create_time &lt;= #{endDate}
+            </if>
+        </where>
+        ORDER BY s.create_time DESC
+    </select>
+
+</mapper>

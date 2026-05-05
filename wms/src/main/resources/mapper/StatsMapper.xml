@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wms.mapper.StatsMapper">
+
+    <!-- 销售趋势统计（按天） -->
+    <select id="getSalesTrend" resultType="com.wms.entity.SalesTrendVO">
+        SELECT
+            DATE(create_time) AS date,
+            SUM(total_amount) AS totalAmount,
+            COUNT(id) AS orderCount
+        FROM sales
+        WHERE create_time >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        GROUP BY DATE(create_time)
+        ORDER BY date ASC
+    </select>
+
+    <!-- 分类销售占比统计 -->
+    <select id="getCategoryRatio" resultType="com.wms.entity.CategoryRatioVO">
+        SELECT
+            gt.name AS categoryName,
+            SUM(sd.count) AS totalQuantity,
+            SUM(sd.subtotal) AS totalAmount,
+            ROUND(SUM(sd.subtotal) * 100.0 / (
+                SELECT SUM(subtotal)
+                FROM sales_detail sd2
+                INNER JOIN sales s2 ON sd2.sales_id = s2.id
+                WHERE s2.create_time >= #{startDate}
+                  AND s2.create_time &lt; #{endDate}
+            ), 2) AS ratio
+        FROM sales_detail sd
+        INNER JOIN sales s ON sd.sales_id = s.id
+        INNER JOIN goods g ON sd.goods_id = g.id
+        INNER JOIN goodstype gt ON g.goodsType = gt.id
+        WHERE s.create_time >= #{startDate}
+          AND s.create_time &lt; #{endDate}
+        GROUP BY gt.id, gt.name
+        ORDER BY totalAmount DESC
+    </select>
+
+    <!-- 毛利统计（按天） -->
+    <select id="getGrossProfit" resultType="com.wms.entity.GrossProfitVO">
+        SELECT
+            DATE(s.create_time) AS date,
+            SUM((sd.price - g.purchase_price) * sd.count) AS grossProfit
+        FROM sales_detail sd
+        INNER JOIN sales s ON sd.sales_id = s.id
+        INNER JOIN goods g ON sd.goods_id = g.id
+        WHERE s.create_time >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        GROUP BY DATE(s.create_time)
+        ORDER BY date ASC
+    </select>
+
+    <!-- 库存周转率分析（最高前10名） -->
+    <select id="getTopTurnoverRate" resultType="com.wms.entity.TurnoverRateVO">
+        SELECT
+            g.id AS goodsId,
+            g.name AS goodsName,
+            g.count AS currentStock,
+            COALESCE(SUM(sd.count), 0) AS totalSales,
+            CASE
+                WHEN g.count > 0 THEN ROUND(COALESCE(SUM(sd.count), 0) * 100.0 / g.count, 2)
+                ELSE 0
+            END AS turnoverRate
+        FROM goods g
+        LEFT JOIN sales_detail sd ON g.id = sd.goods_id
+        LEFT JOIN sales s ON sd.sales_id = s.id AND s.create_time >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        GROUP BY g.id, g.name, g.count
+        HAVING totalSales > 0
+        ORDER BY turnoverRate DESC
+        LIMIT 10
+    </select>
+
+    <!-- 库存周转率分析（最低前10名） -->
+    <select id="getBottomTurnoverRate" resultType="com.wms.entity.TurnoverRateVO">
+        SELECT
+            g.id AS goodsId,
+            g.name AS goodsName,
+            g.count AS currentStock,
+            COALESCE(SUM(sd.count), 0) AS totalSales,
+            CASE
+                WHEN g.count > 0 THEN ROUND(COALESCE(SUM(sd.count), 0) * 100.0 / g.count, 2)
+                ELSE 0
+            END AS turnoverRate
+        FROM goods g
+        LEFT JOIN sales_detail sd ON g.id = sd.goods_id
+        LEFT JOIN sales s ON sd.sales_id = s.id AND s.create_time >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        GROUP BY g.id, g.name, g.count
+        HAVING totalSales > 0
+        ORDER BY turnoverRate ASC
+        LIMIT 10
+    </select>
+
+    <!-- 智能补货建议 -->
+    <select id="getRestockSuggestions" resultType="com.wms.entity.RestockSuggestionVO">
+        SELECT
+            g.id AS goodsId,
+            g.name AS goodsName,
+            ROUND(COALESCE(SUM(sd.count), 0) / 30.0, 2) AS dailyAverageSales,
+            g.count AS currentStock,
+            CEIL(COALESCE(SUM(sd.count), 0) / 30.0 * #{cycleDays}) - g.count AS suggestQuantity
+        FROM goods g
+        LEFT JOIN sales_detail sd ON g.id = sd.goods_id
+        LEFT JOIN sales s ON sd.sales_id = s.id AND s.create_time >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        GROUP BY g.id, g.name, g.count
+        HAVING suggestQuantity > 0
+        ORDER BY suggestQuantity DESC
+    </select>
+
+    <!-- 库存预警列表 -->
+    <select id="getWarningList" resultType="com.wms.entity.Goods">
+        SELECT
+            id,
+            name,
+            storage,
+            goodsType,
+            count,
+            min_count,
+            barcode,
+            specs,
+            unit,
+            retail_price,
+            purchase_price,
+            supplier_id,
+            remark
+        FROM goods
+        WHERE count &lt; min_count
+        ORDER BY count ASC
+    </select>
+
+</mapper>

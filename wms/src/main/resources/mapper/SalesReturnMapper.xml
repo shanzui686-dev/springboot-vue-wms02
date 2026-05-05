@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wms.mapper.SalesReturnMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="SalesReturnVOResultMap" type="com.wms.entity.SalesReturnVO">
+        <id column="id" property="id" />
+        <result column="order_num" property="returnNo" />
+        <result column="return_num" property="returnNum" />
+        <result column="sales_id" property="salesId" />
+        <result column="sales_order_num" property="salesOrderNum" />
+        <result column="cashier_name" property="cashierName" />
+        <result column="remark" property="returnReason" />
+        <result column="total_refund" property="returnAmount" />
+        <result column="status" property="status" />
+        <result column="create_time" property="createTime" />
+        <result column="refund_time" property="refundTime" />
+        <result column="user_id" property="userId" />
+    </resultMap>
+
+    <!-- 分页查询退货单列表（连表查询收银员和原销售单信息） -->
+    <select id="selectReturnPage" resultMap="SalesReturnVOResultMap">
+        SELECT
+            sr.id,
+            sr.order_num,
+            sr.return_num,
+            sr.sales_id,
+            IFNULL(s.order_num, CONCAT('SO', LPAD(s.id, 8, '0'))) AS sales_order_num,
+            u.name AS cashier_name,
+            sr.remark,
+            sr.total_refund,
+            sr.status,
+            sr.create_time,
+            sr.refund_time,
+            sr.user_id
+        FROM sales_return sr
+        LEFT JOIN sales s ON sr.sales_id = s.id
+        LEFT JOIN user u ON s.user_id = u.id
+        <where>
+            <if test="returnNo != null and returnNo != ''">
+                AND sr.order_num LIKE CONCAT('%', #{returnNo}, '%')
+            </if>
+            <if test="status != null">
+                AND sr.status = #{status}
+            </if>
+        </where>
+        ORDER BY sr.create_time DESC
+    </select>
+
+</mapper>

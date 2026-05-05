@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wms.mapper.SalesReturnDetailMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="ReturnDetailVOResultMap" type="com.wms.entity.ReturnDetailVO">
+        <id column="id" property="id" />
+        <result column="return_id" property="returnId" />
+        <result column="goods_id" property="goodsId" />
+        <result column="goods_name" property="goodsName" />
+        <result column="return_count" property="returnCount" />
+        <result column="refund_amount" property="price" />
+        <result column="subtotal" property="subtotal" />
+    </resultMap>
+
+    <!-- 查询退货明细列表（连表查询商品名称） -->
+    <select id="selectDetailsByReturnId" resultMap="ReturnDetailVOResultMap">
+        SELECT
+            srd.id,
+            srd.return_id,
+            srd.goods_id,
+            g.name AS goods_name,
+            srd.return_count,
+            srd.refund_amount,
+            srd.subtotal
+        FROM sales_return_detail srd
+        LEFT JOIN goods g ON srd.goods_id = g.id
+        WHERE srd.return_id = #{returnId}
+        ORDER BY srd.id ASC
+    </select>
+
+</mapper>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wms.mapper.SalesDetailMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="SalesDetailVOResultMap" type="com.wms.entity.SalesDetailVO">
+        <id column="id" property="id" />
+        <result column="sales_id" property="salesId" />
+        <result column="goods_id" property="goodsId" />
+        <result column="goods_name" property="goodsName" />
+        <result column="count" property="count" />
+        <result column="price" property="price" />
+        <result column="subtotal" property="subtotal" />
+    </resultMap>
+
+    <!-- 查询销售明细列表（连表查询商品名称） -->
+    <select id="selectDetailsBySalesId" resultMap="SalesDetailVOResultMap">
+        SELECT
+            sd.id,
+            sd.sales_id,
+            sd.goods_id,
+            g.name AS goods_name,
+            sd.count,
+            sd.price,
+            sd.subtotal
+        FROM sales_detail sd
+        LEFT JOIN goods g ON sd.goods_id = g.id
+        WHERE sd.sales_id = #{salesId}
+        ORDER BY sd.id ASC
+    </select>
+
+</mapper>

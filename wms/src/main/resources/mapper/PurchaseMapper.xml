@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wms.mapper.PurchaseMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="PurchaseVOResultMap" type="com.wms.entity.PurchaseVO">
+        <id column="id" property="id" />
+        <result column="purchase_no" property="purchaseNo" />
+        <result column="supplier_id" property="supplierId" />
+        <result column="supplier_name" property="supplierName" />
+        <result column="user_id" property="userId" />
+        <result column="user_name" property="userName" />
+        <result column="purchase_date" property="purchaseDate" />
+        <result column="total_amount" property="totalAmount" />
+        <result column="status" property="status" />
+        <result column="remark" property="remark" />
+    </resultMap>
+
+    <!-- 分页查询采购单（连表查询供应商和采购员信息） -->
+    <select id="selectPurchaseWithDetails" resultMap="PurchaseVOResultMap">
+        SELECT
+            p.id,
+            p.purchase_no,
+            p.supplier_id,
+            s.name AS supplier_name,
+            p.user_id,
+            u.name AS user_name,
+            p.purchase_date,
+            p.total_amount,
+            p.status,
+            p.remark
+        FROM purchase p
+        LEFT JOIN supplier s ON p.supplier_id = s.id
+        LEFT JOIN user u ON p.user_id = u.id
+        <where>
+            <if test="purchaseNo != null and purchaseNo != ''">
+                AND p.purchase_no LIKE CONCAT('%', #{purchaseNo}, '%')
+            </if>
+            <if test="supplierId != null">
+                AND p.supplier_id = #{supplierId}
+            </if>
+            <if test="status != null">
+                AND p.status = #{status}
+            </if>
+        </where>
+        ORDER BY p.purchase_date DESC
+    </select>
+
+</mapper>
