@@ -28,6 +28,21 @@ public class RestockSuggestionVO implements Serializable {
     private String goodsName;
 
     /**
+     * 商品条码
+     */
+    private String barcode;
+
+    /**
+     * 分类ID
+     */
+    private Integer categoryId;
+
+    /**
+     * 分类名称
+     */
+    private String categoryName;
+
+    /**
      * 日均销量
      */
     private BigDecimal dailyAverageSales;
@@ -41,4 +56,9 @@ public class RestockSuggestionVO implements Serializable {
      * 建议补货量
      */
     private Integer suggestQuantity;
+
+    /**
+     * 安全库存
+     */
+    private Integer safetyStock;
 }

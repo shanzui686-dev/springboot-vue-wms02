@@ -22,7 +22,7 @@ public class SalesReturn implements Serializable {
     private Integer id;
 
     @Schema(description = "退货单号")
-    @TableField("order_num")
+    @TableField(value = "order_num", insertStrategy = com.baomidou.mybatisplus.annotation.FieldStrategy.NEVER)
     private String returnNo;
 
     @Schema(description = "原销售单ID")

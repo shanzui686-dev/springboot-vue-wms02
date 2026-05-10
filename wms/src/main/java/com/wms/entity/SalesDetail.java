@@ -33,12 +33,15 @@ public class SalesDetail implements Serializable {
     private Integer goodsId;
 
     @Schema(description = "数量")
+    @TableField("count")
     private Integer count;
 
     @Schema(description = "单价")
+    @TableField("price")
     private BigDecimal price;
 
     @Schema(description = "小计")
+    @TableField("subtotal")
     private BigDecimal subtotal;
 
     public Integer getId() {

@@ -10,6 +10,7 @@ import com.wms.entity.SalesDetail;
 import com.wms.entity.SalesDetailVO;
 import com.wms.entity.SalesReturn;
 import com.wms.entity.SalesVO;
+import com.wms.entity.Record;
 import com.wms.mapper.GoodsMapper;
 import com.wms.mapper.SalesDetailMapper;
 import com.wms.mapper.SalesMapper;
@@ -17,6 +18,7 @@ import com.wms.mapper.SalesReturnMapper;
 import com.wms.service.IGoodsService;
 import com.wms.service.ISalesDetailService;
 import com.wms.service.ISalesService;
+import com.wms.service.IRecordService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -51,6 +53,9 @@ public class SalesServiceImpl extends ServiceImpl<SalesMapper, Sales> implements
 
     @Autowired
     private SalesReturnMapper salesReturnMapper;
+
+    @Autowired
+    private IRecordService recordService;
 
     /**
      * 收银结算（事务处理）
@@ -103,6 +108,11 @@ public class SalesServiceImpl extends ServiceImpl<SalesMapper, Sales> implements
         // 4. 获取自动生成的主键 ID（订单流水号）
         Integer salesId = sales.getId();
 
+        // 生成订单号并更新 (格式: SO + 8位数字ID，如 SO00000026)
+        String orderNum = "SO" + String.format("%08d", salesId);
+        sales.setOrderNum(orderNum);
+        this.updateById(sales);
+
         // 5. 将主键 ID 赋值给每个明细，并批量插入销售明细表
         for (SalesDetail detail : details) {
             detail.setSalesId(salesId);
@@ -113,7 +123,20 @@ public class SalesServiceImpl extends ServiceImpl<SalesMapper, Sales> implements
             throw new RuntimeException("销售明细保存失败");
         }
 
-        // 6. 返回订单流水号
+        // 6. 记录出入库流水（每个商品一条记录）
+        for (SalesDetail detail : details) {
+            Record record = new Record();
+            record.setGoods(detail.getGoodsId());
+            record.setCount(-detail.getCount()); // 数量为负
+            record.setOperationType("销售出库");
+            record.setRefOrderNum(sales.getOrderNum() != null ? sales.getOrderNum() : salesId.toString());
+            record.setAdminId(sales.getUserId());
+            record.setCreatetime(sales.getCreateTime());
+            record.setStatus(1); // 已完成
+            recordService.save(record);
+        }
+
+        // 7. 返回订单流水号
         return salesId;
     }
 
@@ -194,6 +217,17 @@ public class SalesServiceImpl extends ServiceImpl<SalesMapper, Sales> implements
             if (!updateResult) {
                 throw new RuntimeException("商品【" + goods.getName() + "】库存回滚失败");
             }
+
+            // 4.1 记录出入库流水（退款视为销售退货）
+            Record record = new Record();
+            record.setGoods(detail.getGoodsId());
+            record.setCount(detail.getCount()); // 数量为正（库存回滚）
+            record.setOperationType("销售退货");
+            record.setRefOrderNum("REFUND_" + orderNum);
+            record.setAdminId(sales.getUserId());
+            record.setCreatetime(LocalDateTime.now());
+            record.setStatus(1); // 已完成
+            recordService.save(record);
         }
 
         // 5. 创建退货记录（状态设为已退款）

@@ -25,7 +25,7 @@ public class GoodsVO implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
-    @Schema(description = "货名")
+    @Schema(description = "商品名")
     private String name;
 
     @Schema(description = "仓库")

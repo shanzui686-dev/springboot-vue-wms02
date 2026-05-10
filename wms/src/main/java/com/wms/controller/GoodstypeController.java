@@ -30,19 +30,19 @@ public class GoodstypeController {
     @Autowired
     private IGoodstypeService goodstypeService;
     //新增
-    @Log("新增物品分类")
+    @Log("新增商品分类")
     @PostMapping("/save")
     public Result save(@RequestBody Goodstype goodstype){
         return goodstypeService.save(goodstype)?Result.suc():Result.fail();
     }
     //更新
-    @Log("更新物品分类")
+    @Log("更新商品分类")
     @PostMapping("/update")
     public Result update(@RequestBody Goodstype goodstype){
         return goodstypeService.updateById(goodstype)?Result.suc():Result.fail();
     }
     //删除
-    @Log("删除物品分类")
+    @Log("删除商品分类")
     @GetMapping("/del")
     public Result del(@RequestParam String id){
         return goodstypeService.removeById(id)?Result.suc():Result.fail();

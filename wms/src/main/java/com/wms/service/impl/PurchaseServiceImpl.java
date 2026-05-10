@@ -11,6 +11,8 @@ import com.wms.mapper.PurchaseDetailMapper;
 import com.wms.mapper.PurchaseMapper;
 import com.wms.entity.PurchaseDTO;
 import com.wms.entity.PurchaseVO;
+import com.wms.entity.Record;
+import com.wms.service.IRecordService;
 import com.wms.service.IPurchaseService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.BeanUtils;
@@ -41,6 +43,9 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseMapper, Purchase> i
 
     @Autowired
     private GoodsMapper goodsMapper;
+
+    @Autowired
+    private IRecordService recordService;
 
     /**
      * 分页查询采购单（连表查询）
@@ -238,6 +243,17 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseMapper, Purchase> i
             if (updateResult <= 0) {
                 throw new RuntimeException("商品库存更新失败");
             }
+
+            // 4.1 记录出入库流水
+            Record record = new Record();
+            record.setGoods(detail.getGoodsId());
+            record.setCount(detail.getCount()); // 数量为正
+            record.setOperationType("采购入库");
+            record.setRefOrderNum(purchase.getPurchaseNo() != null ? purchase.getPurchaseNo() : purchase.getId().toString());
+            record.setAdminId(purchase.getUserId());
+            record.setCreatetime(java.time.LocalDateTime.now());
+            record.setStatus(1); // 已完成
+            recordService.save(record);
         }
 
         // 5. 更新采购单状态为已入库
@@ -302,6 +318,17 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseMapper, Purchase> i
             if (updateResult <= 0) {
                 throw new RuntimeException("商品库存扣减失败");
             }
+
+            // 5.1 记录出入库流水
+            Record record = new Record();
+            record.setGoods(detail.getGoodsId());
+            record.setCount(-detail.getCount()); // 数量为负
+            record.setOperationType("采购退货");
+            record.setRefOrderNum(purchase.getPurchaseNo() != null ? purchase.getPurchaseNo() : purchase.getId().toString());
+            record.setAdminId(purchase.getUserId());
+            record.setCreatetime(java.time.LocalDateTime.now());
+            record.setStatus(1); // 已完成
+            recordService.save(record);
         }
 
         // 6. 更新采购单状态为已退货

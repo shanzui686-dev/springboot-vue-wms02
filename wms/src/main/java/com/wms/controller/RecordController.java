@@ -1,6 +1,7 @@
 package com.wms.controller;
 
 import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -26,6 +27,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -272,7 +274,12 @@ public class RecordController {
             vo.setCount(record.getCount());
             vo.setUsername(record.getUsername());
             vo.setAdminname(record.getAdminname());
-            vo.setCreatetime(record.getCreatetime());
+            // 格式化时间为字符串
+            if (record.getCreatetime() != null) {
+                vo.setCreatetime(record.getCreatetime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            } else {
+                vo.setCreatetime("");
+            }
             vo.setRemark(record.getRemark());
             // 状态转换
             if (record.getStatus() != null) {
@@ -299,8 +306,9 @@ public class RecordController {
         String fileName = URLEncoder.encode("出入库记录_" + System.currentTimeMillis(), "UTF-8").replaceAll("\\+", "%20");
         response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
         
-        // 使用EasyExcel导出
+        // 使用EasyExcel导出，设置自动列宽
         EasyExcel.write(response.getOutputStream(), RecordExportVO.class)
+                .registerWriteHandler(new LongestMatchColumnWidthStyleStrategy())
                 .sheet("出入库记录")
                 .doWrite(exportList);
     }

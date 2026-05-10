@@ -4,7 +4,6 @@ import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 /**
  * 记录导出DTO
@@ -17,7 +16,7 @@ public class RecordExportVO implements Serializable {
     @ExcelProperty(value = "记录ID", index = 0)
     private Integer id;
 
-    @ExcelProperty(value = "物品名称", index = 1)
+    @ExcelProperty(value = "商品名称", index = 1)
     private String goodsName;
 
     @ExcelProperty(value = "仓库名称", index = 2)
@@ -42,7 +41,7 @@ public class RecordExportVO implements Serializable {
     private String adminname;
 
     @ExcelProperty(value = "操作时间", index = 9)
-    private LocalDateTime createtime;
+    private String createtime;
 
     @ExcelProperty(value = "备注", index = 10)
     private String remark;

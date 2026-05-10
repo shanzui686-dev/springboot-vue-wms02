@@ -95,14 +95,25 @@
         SELECT
             g.id AS goodsId,
             g.name AS goodsName,
-            ROUND(COALESCE(SUM(sd.count), 0) / 30.0, 2) AS dailyAverageSales,
+            g.barcode AS barcode,
+            g.goodsType AS categoryId,
+            gt.name AS categoryName,
+            COALESCE(sales_stats.daily_avg_sales, 0) AS dailyAverageSales,
             g.count AS currentStock,
-            CEIL(COALESCE(SUM(sd.count), 0) / 30.0 * #{cycleDays}) - g.count AS suggestQuantity
+            CEIL(COALESCE(sales_stats.daily_avg_sales, 0) * #{cycleDays} + g.min_count - g.count) AS suggestQuantity,
+            g.min_count AS safetyStock
         FROM goods g
-        LEFT JOIN sales_detail sd ON g.id = sd.goods_id
-        LEFT JOIN sales s ON sd.sales_id = s.id AND s.create_time >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-        GROUP BY g.id, g.name, g.count
-        HAVING suggestQuantity > 0
+        LEFT JOIN goodstype gt ON g.goodsType = gt.id
+        LEFT JOIN (
+            SELECT
+                sd.goods_id,
+                SUM(sd.count) / 30.0 AS daily_avg_sales
+            FROM sales_detail sd
+            INNER JOIN sales s ON sd.sales_id = s.id
+            WHERE s.create_time >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            GROUP BY sd.goods_id
+        ) sales_stats ON g.id = sales_stats.goods_id
+        WHERE (COALESCE(sales_stats.daily_avg_sales, 0) * #{cycleDays} + g.min_count - g.count) > 0
         ORDER BY suggestQuantity DESC
     </select>
 

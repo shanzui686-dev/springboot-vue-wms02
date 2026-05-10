@@ -11,6 +11,7 @@ import com.wms.service.IGoodsService;
 import com.wms.service.ISalesReturnDetailService;
 import com.wms.service.ISalesReturnService;
 import com.wms.service.ISalesService;
+import com.wms.service.IRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +41,9 @@ public class SalesReturnServiceImpl extends ServiceImpl<SalesReturnMapper, Sales
 
     @Autowired
     private SalesReturnDetailMapper salesReturnDetailMapper;
+
+    @Autowired
+    private IRecordService recordService;
 
     /**
      * 发起退货申请
@@ -86,8 +90,9 @@ public class SalesReturnServiceImpl extends ServiceImpl<SalesReturnMapper, Sales
 
         // 5. 插入退货主表（状态默认为0待退款）
         SalesReturn salesReturn = new SalesReturn();
-        salesReturn.setReturnNo(sales.getOrderNum()); // 关联原销售单号
-        salesReturn.setReturnNum(returnNum); // 退货单流水号
+        salesReturn.setReturnNum(returnNum); // 退货单唯一流水号 (RET...)
+        // 关联原销售单号，如果原销售单号为空则使用退货流水号作为兜底
+        salesReturn.setReturnNo(sales.getOrderNum() != null ? sales.getOrderNum() : returnNum);
         salesReturn.setSalesId(returnApplyDTO.getSalesId());
         salesReturn.setReturnReason(returnApplyDTO.getReturnReason());
         salesReturn.setReturnAmount(totalAmount);
@@ -169,6 +174,17 @@ public class SalesReturnServiceImpl extends ServiceImpl<SalesReturnMapper, Sales
             if (!updateResult) {
                 throw new RuntimeException("商品【" + goods.getName() + "】库存回滚失败");
             }
+
+            // 4.1 记录出入库流水
+            Record record = new Record();
+            record.setGoods(detail.getGoodsId());
+            record.setCount(detail.getReturnCount()); // 数量为正
+            record.setOperationType("销售退货");
+            record.setRefOrderNum(salesReturn.getReturnNum());
+            record.setAdminId(salesReturn.getUserId());
+            record.setCreatetime(LocalDateTime.now());
+            record.setStatus(1); // 已完成
+            recordService.save(record);
         }
 
         // 5. 更新退货单状态为已退款

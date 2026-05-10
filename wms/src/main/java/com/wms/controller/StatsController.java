@@ -1,9 +1,19 @@
 package com.wms.controller;
 
+import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy;
 import com.wms.common.Result;
+import com.wms.entity.RestockExportVO;
+import com.wms.entity.RestockSuggestionVO;
 import com.wms.service.IStatsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <p>
@@ -114,6 +124,54 @@ public class StatsController {
             return Result.suc(statsService.getWarningList());
         } catch (Exception e) {
             return Result.fail("查询库存预警失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 导出智能补货建议为Excel
+     * @param cycleDays 预计采购周期（天），默认7天
+     * @param response HTTP响应
+     */
+    @GetMapping("/exportRestockSuggestion")
+    public void exportRestockSuggestion(
+            @RequestParam(required = false, defaultValue = "7") Integer cycleDays,
+            HttpServletResponse response) throws IOException {
+        try {
+            // 获取补货建议数据
+            List<RestockSuggestionVO> restockList = statsService.getRestockSuggestions(cycleDays);
+            
+            // 转换为导出VO
+            List<RestockExportVO> exportList = new ArrayList<>();
+            for (RestockSuggestionVO vo : restockList) {
+                RestockExportVO exportVO = new RestockExportVO();
+                exportVO.setBarcode(vo.getBarcode());
+                exportVO.setGoodsName(vo.getGoodsName());
+                exportVO.setCategoryName(vo.getCategoryName() != null ? vo.getCategoryName() : "-");
+                exportVO.setCurrentStock(vo.getCurrentStock());
+                exportVO.setSafetyStock(vo.getSafetyStock());
+                // 格式化日均销量为字符串，保留2位小数
+                if (vo.getDailyAverageSales() != null) {
+                    exportVO.setDailyAverageSales(String.format("%.2f", vo.getDailyAverageSales()));
+                } else {
+                    exportVO.setDailyAverageSales("0.00");
+                }
+                exportVO.setSuggestQuantity(vo.getSuggestQuantity());
+                exportList.add(exportVO);
+            }
+            
+            // 设置响应头
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setCharacterEncoding("utf-8");
+            String fileName = URLEncoder.encode("智能补货建议_" + System.currentTimeMillis(), "UTF-8").replaceAll("\\+", "%20");
+            response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
+            
+            // 使用EasyExcel导出，设置自动列宽
+            EasyExcel.write(response.getOutputStream(), RestockExportVO.class)
+                    .registerWriteHandler(new LongestMatchColumnWidthStyleStrategy())
+                    .sheet("智能补货建议")
+                    .doWrite(exportList);
+        } catch (Exception e) {
+            throw new IOException("导出Excel失败：" + e.getMessage(), e);
         }
     }
 }
