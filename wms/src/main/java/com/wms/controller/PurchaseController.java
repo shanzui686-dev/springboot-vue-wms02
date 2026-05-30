@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.wms.common.Log;
 import com.wms.common.QueryPageParam;
+import com.wms.common.RequireRole;
 import com.wms.common.Result;
 import com.wms.entity.Goods;
+import com.wms.entity.InboundDTO;
 import com.wms.entity.PurchaseDTO;
 import com.wms.entity.PurchaseDetail;
 import com.wms.entity.PurchaseVO;
@@ -30,6 +32,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/purchase")
+@RequireRole({0, 1}) // 店长+库管员
 public class PurchaseController {
 
     @Autowired
@@ -112,20 +115,33 @@ public class PurchaseController {
     }
 
     /**
-     * 确认入库（更新状态为已入库，增加商品库存）
+     * 店长审核采购单（状态 待审核→已审核待入库）
      */
-    @Log("采购入库")
-    @PostMapping("/inbound")
-    public Result inbound(@RequestParam Integer purchaseId) {
+    @Log("审核采购单")
+    @PostMapping("/audit")
+    public Result audit(@RequestParam Integer purchaseId) {
         try {
-            return purchaseService.inbound(purchaseId) ? Result.suc() : Result.fail();
+            return purchaseService.audit(purchaseId) ? Result.suc() : Result.fail();
         } catch (RuntimeException e) {
             return Result.fail(e.getMessage());
         }
     }
 
     /**
-     * 采购退货（更新状态为已退货，扣减商品库存）
+     * 确认入库（店长选择仓库+填写入库数量）
+     */
+    @Log("采购入库")
+    @PostMapping("/inbound")
+    public Result inbound(@RequestBody InboundDTO inboundDTO) {
+        try {
+            return purchaseService.inbound(inboundDTO) ? Result.suc() : Result.fail();
+        } catch (RuntimeException e) {
+            return Result.fail(e.getMessage());
+        }
+    }
+
+    /**
+     * 采购退货（按批次FIFO扣减库存）
      */
     @Log("采购退货")
     @PostMapping("/returnGoods")
@@ -156,6 +172,8 @@ public class PurchaseController {
             map.put("count", detail.getCount());
             map.put("price", detail.getPrice());
             map.put("subtotal", detail.getSubtotal());
+            map.put("batchNo", detail.getBatchNo());
+            map.put("storageId", detail.getStorageId());
             map.put("remark", detail.getRemark());
 
             // 查询商品信息

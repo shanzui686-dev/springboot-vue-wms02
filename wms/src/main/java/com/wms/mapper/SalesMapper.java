@@ -30,5 +30,6 @@ public interface SalesMapper extends BaseMapper<Sales> {
     IPage<SalesVO> selectSalesPage(Page<SalesVO> page,
                                     @Param("orderNum") String orderNum,
                                     @Param("startDate") String startDate,
-                                    @Param("endDate") String endDate);
+                                    @Param("endDate") String endDate,
+                                    @Param("userId") Integer userId);
 }

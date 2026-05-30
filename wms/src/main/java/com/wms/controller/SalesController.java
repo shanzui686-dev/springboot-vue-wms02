@@ -3,6 +3,7 @@ package com.wms.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.common.Log;
+import com.wms.common.RequireRole;
 import com.wms.common.Result;
 import com.wms.entity.SalesDTO;
 import com.wms.entity.SalesDetailVO;
@@ -23,6 +24,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/sales")
+@RequireRole({0, 2}) // 店长+收银员
 public class SalesController {
 
     @Autowired
@@ -60,14 +62,10 @@ public class SalesController {
                            @RequestParam(defaultValue = "10") Integer limit,
                            @RequestParam(required = false) String orderNum,
                            @RequestParam(required = false) String startDate,
-                           @RequestParam(required = false) String endDate) {
-        // 创建分页对象
+                           @RequestParam(required = false) String endDate,
+                           @RequestParam(required = false) Integer userId) {
         Page<SalesVO> pageParam = new Page<>(page, limit);
-        
-        // 调用服务层方法，执行分页查询
-        IPage<SalesVO> result = salesService.listPage(pageParam, orderNum, startDate, endDate);
-        
-        // 返回查询结果
+        IPage<SalesVO> result = salesService.listPage(pageParam, orderNum, startDate, endDate, userId);
         return Result.suc(result);
     }
 

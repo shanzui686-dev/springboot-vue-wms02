@@ -1,11 +1,6 @@
 package com.wms.service;
 
-import com.wms.entity.CategoryRatioVO;
-import com.wms.entity.Goods;
-import com.wms.entity.GrossProfitVO;
-import com.wms.entity.RestockSuggestionVO;
-import com.wms.entity.SalesTrendVO;
-import com.wms.entity.TurnoverRateVO;
+import com.wms.entity.*;
 
 import java.util.List;
 
@@ -18,6 +13,12 @@ import java.util.List;
  * @since 2026-04-18
  */
 public interface IStatsService {
+
+    /**
+     * 获取今日销售统计汇总
+     * @return 今日销售统计
+     */
+    TodaySummaryVO getTodaySummary();
 
     /**
      * 销售趋势统计（按天）
@@ -54,7 +55,6 @@ public interface IStatsService {
     List<TurnoverRateVO> getBottomTurnoverRate();
 
     /**
-     * 智能补货建议
      * @param cycleDays 预计采购周期（天），默认7天
      * @return 需要补货的商品列表
      */
@@ -65,4 +65,9 @@ public interface IStatsService {
      * @return 库存低于预警值的商品列表
      */
     List<Goods> getWarningList();
+
+    /**
+     * 按商品销售统计（近30天）
+     */
+    List<ProductSalesVO> getProductSales();
 }

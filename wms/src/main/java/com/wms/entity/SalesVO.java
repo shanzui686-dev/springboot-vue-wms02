@@ -48,6 +48,12 @@ public class SalesVO implements Serializable {
     @Schema(description = "退货状态：0未退货，1待退款，2已退款")
     private Integer returnStatus;
 
+    @Schema(description = "支付方式(1:现金, 2:扫码)")
+    private Integer paymentMethod;
+
+    @Schema(description = "销售单状态(0:正常, 1:已退款)")
+    private Integer status;
+
     public Integer getId() {
         return id;
     }
@@ -119,6 +125,12 @@ public class SalesVO implements Serializable {
     public void setReturnStatus(Integer returnStatus) {
         this.returnStatus = returnStatus;
     }
+
+    public Integer getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(Integer paymentMethod) { this.paymentMethod = paymentMethod; }
+
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
 
     @Override
     public String toString() {

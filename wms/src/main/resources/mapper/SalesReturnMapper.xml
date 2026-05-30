@@ -15,7 +15,8 @@
         <result column="status" property="status" />
         <result column="create_time" property="createTime" />
         <result column="refund_time" property="refundTime" />
-        <result column="user_id" property="userId" />
+        <result column="is_resalable" property="isResalable" />
+        <result column="type" property="type" />
     </resultMap>
 
     <!-- 分页查询退货单列表（连表查询收银员和原销售单信息） -->
@@ -32,7 +33,8 @@
             sr.status,
             sr.create_time,
             sr.refund_time,
-            sr.user_id
+            sr.is_resalable,
+            sr.type
         FROM sales_return sr
         LEFT JOIN sales s ON sr.sales_id = s.id
         LEFT JOIN user u ON s.user_id = u.id
@@ -42,6 +44,9 @@
             </if>
             <if test="status != null">
                 AND sr.status = #{status}
+            </if>
+            <if test="userId != null">
+                AND s.user_id = #{userId}
             </if>
         </where>
         ORDER BY sr.create_time DESC

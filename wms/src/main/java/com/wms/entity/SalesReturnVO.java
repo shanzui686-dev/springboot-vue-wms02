@@ -50,6 +50,12 @@ public class SalesReturnVO implements Serializable {
     @Schema(description = "退款时间")
     private LocalDateTime refundTime;
 
+    @Schema(description = "是否影响二次销售")
+    private Integer isResalable;
+
+    @Schema(description = "类型(1退货/2换货)")
+    private Integer type;
+
     public Integer getId() {
         return id;
     }
@@ -145,6 +151,12 @@ public class SalesReturnVO implements Serializable {
     public void setRefundTime(LocalDateTime refundTime) {
         this.refundTime = refundTime;
     }
+
+    public Integer getIsResalable() { return isResalable; }
+    public void setIsResalable(Integer isResalable) { this.isResalable = isResalable; }
+
+    public Integer getType() { return type; }
+    public void setType(Integer type) { this.type = type; }
 
     @Override
     public String toString() {

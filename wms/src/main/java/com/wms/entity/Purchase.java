@@ -40,7 +40,7 @@ public class Purchase implements Serializable {
     @Schema(description = "总金额")
     private BigDecimal totalAmount;
 
-    @Schema(description = "状态(0:待审核, 1:已完成, 2:已取消)")
+    @Schema(description = "状态(0:待审核, 1:已审核待入库, 2:已入库, 3:已取消)")
     private Integer status;
 
     @Schema(description = "备注")

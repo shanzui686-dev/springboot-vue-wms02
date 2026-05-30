@@ -39,6 +39,12 @@ public class PurchaseDetail implements Serializable {
     @Schema(description = "小计金额")
     private BigDecimal subtotal;
 
+    @Schema(description = "批次号（采购时自动生成，格式yyyyMMddHHmm）")
+    private String batchNo;
+
+    @Schema(description = "入库仓库ID")
+    private Integer storageId;
+
     @Schema(description = "备注")
     private String remark;
 
@@ -90,6 +96,22 @@ public class PurchaseDetail implements Serializable {
         this.subtotal = subtotal;
     }
 
+    public String getBatchNo() {
+        return batchNo;
+    }
+
+    public void setBatchNo(String batchNo) {
+        this.batchNo = batchNo;
+    }
+
+    public Integer getStorageId() {
+        return storageId;
+    }
+
+    public void setStorageId(Integer storageId) {
+        this.storageId = storageId;
+    }
+
     public String getRemark() {
         return remark;
     }
@@ -107,6 +129,8 @@ public class PurchaseDetail implements Serializable {
             ", count = " + count +
             ", price = " + price +
             ", subtotal = " + subtotal +
+            ", batchNo = " + batchNo +
+            ", storageId = " + storageId +
             ", remark = " + remark +
         "}";
     }

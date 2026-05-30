@@ -11,6 +11,8 @@
         <result column="count" property="count" />
         <result column="price" property="price" />
         <result column="subtotal" property="subtotal" />
+        <result column="status" property="status" />
+        <result column="batch_no" property="batchNo" />
     </resultMap>
 
     <!-- 查询销售明细列表（连表查询商品名称） -->
@@ -22,7 +24,9 @@
             g.name AS goods_name,
             sd.count,
             sd.price,
-            sd.subtotal
+            sd.subtotal,
+            sd.status,
+            sd.batch_no
         FROM sales_detail sd
         LEFT JOIN goods g ON sd.goods_id = g.id
         WHERE sd.sales_id = #{salesId}

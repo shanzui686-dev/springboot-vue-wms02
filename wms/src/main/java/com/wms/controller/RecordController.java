@@ -73,7 +73,7 @@ public class RecordController {
         page.setSize(query.getPagesize());
         
         QueryWrapper<Record> queryWrapper=new QueryWrapper<>();
-        queryWrapper.apply(" a.goods=b.id and b.storage=c.id and b.goodsType=d.id ");
+        // XML 中已使用 LEFT JOIN 关联表，此处不再添加 apply 条件，避免将 LEFT JOIN 降级为 INNER JOIN
         if(StringUtils.isNotBlank(name) && !"null".equals(name)){
             queryWrapper.like("b.name", name);
         }
@@ -97,7 +97,8 @@ public class RecordController {
             queryWrapper.eq("a.userId", userId);
         }
 
-        
+        queryWrapper.orderByDesc("a.createtime");
+
         // 使用自定义查询
         IPage<RecordRes> result=recordMapper.pageCC(page,queryWrapper);
         return Result.suc(result.getRecords(),result.getTotal());

@@ -23,5 +23,6 @@ public interface SalesReturnMapper extends BaseMapper<SalesReturn> {
      */
     IPage<SalesReturnVO> selectReturnPage(Page<SalesReturnVO> page,
                                            @Param("returnNo") String returnNo,
-                                           @Param("status") Integer status);
+                                           @Param("status") Integer status,
+                                           @Param("userId") Integer userId);
 }

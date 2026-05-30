@@ -35,7 +35,7 @@ public interface ISalesService extends IService<Sales> {
      * @param endDate 结束日期
      * @return 分页结果
      */
-    IPage<SalesVO> listPage(Page<SalesVO> page, String orderNum, String startDate, String endDate);
+    IPage<SalesVO> listPage(Page<SalesVO> page, String orderNum, String startDate, String endDate, Integer userId);
 
     /**
      * 查询销售明细列表

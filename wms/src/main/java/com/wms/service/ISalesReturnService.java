@@ -36,7 +36,7 @@ public interface ISalesReturnService extends IService<SalesReturn> {
      * @param status 状态
      * @return 分页结果
      */
-    IPage<SalesReturnVO> listPage(Page<SalesReturnVO> page, String returnNo, Integer status);
+    IPage<SalesReturnVO> listPage(Page<SalesReturnVO> page, String returnNo, Integer status, Integer userId);
 
     /**
      * 查询退货明细列表

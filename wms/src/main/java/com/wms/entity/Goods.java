@@ -37,6 +37,10 @@ public class Goods implements Serializable {
     @Schema(description = "数量")
     private Integer count;
 
+    @Schema(description = "预占数量")
+    @TableField("reserved_count")
+    private Integer reservedCount;
+
     @Schema(description = "预警下限")
     @TableField("min_count")
     private Integer minCount;
@@ -64,6 +68,10 @@ public class Goods implements Serializable {
 
     @Schema(description = "备注")
     private String remark;
+
+    @Schema(description = "批次号（新增商品时选填）")
+    @TableField(exist = false)
+    private String batchNo;
 
     public Integer getId() {
         return id;
@@ -103,6 +111,14 @@ public class Goods implements Serializable {
 
     public void setCount(Integer count) {
         this.count = count;
+    }
+
+    public Integer getReservedCount() {
+        return reservedCount;
+    }
+
+    public void setReservedCount(Integer reservedCount) {
+        this.reservedCount = reservedCount;
     }
 
     public Integer getMinCount() {
@@ -169,6 +185,14 @@ public class Goods implements Serializable {
         this.remark = remark;
     }
 
+    public String getBatchNo() {
+        return batchNo;
+    }
+
+    public void setBatchNo(String batchNo) {
+        this.batchNo = batchNo;
+    }
+
     @Override
     public String toString() {
         return "Goods{" +
@@ -177,6 +201,7 @@ public class Goods implements Serializable {
             ", storage = " + storage +
             ", goodsType = " + goodsType +
             ", count = " + count +
+            ", reservedCount = " + reservedCount +
             ", minCount = " + minCount +
             ", barcode = " + barcode +
             ", specs = " + specs +

@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.common.Log;
 import com.wms.common.QueryPageParam;
+import com.wms.common.RequireRole;
 import com.wms.common.Result;
 import com.wms.entity.LoginDTO;
 import com.wms.entity.Menu;
@@ -34,6 +35,7 @@ import java.security.NoSuchAlgorithmException;
  */
 @RestController
 @RequestMapping("/user")
+@RequireRole({0}) // 只有店长能管理用户
 public class UserController {
     @Autowired
     private UserService userService;

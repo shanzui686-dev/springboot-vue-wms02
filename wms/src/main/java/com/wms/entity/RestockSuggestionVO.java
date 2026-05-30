@@ -61,4 +61,14 @@ public class RestockSuggestionVO implements Serializable {
      * 安全库存
      */
     private Integer safetyStock;
+
+    /**
+     * 供应商ID
+     */
+    private Integer supplierId;
+
+    /**
+     * 进货价
+     */
+    private BigDecimal purchasePrice;
 }

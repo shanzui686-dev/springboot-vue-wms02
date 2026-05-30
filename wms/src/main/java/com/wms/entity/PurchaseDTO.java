@@ -72,6 +72,9 @@ public class PurchaseDTO implements Serializable {
         @Schema(description = "小计金额")
         private BigDecimal subtotal;
 
+        @Schema(description = "批次号（采购时自动生成）")
+        private String batchNo;
+
         @Schema(description = "备注")
         private String remark;
 
@@ -115,6 +118,14 @@ public class PurchaseDTO implements Serializable {
             this.subtotal = subtotal;
         }
 
+        public String getBatchNo() {
+            return batchNo;
+        }
+
+        public void setBatchNo(String batchNo) {
+            this.batchNo = batchNo;
+        }
+
         public String getRemark() {
             return remark;
         }
@@ -131,6 +142,7 @@ public class PurchaseDTO implements Serializable {
                 ", count = " + count +
                 ", price = " + price +
                 ", subtotal = " + subtotal +
+                ", batchNo = " + batchNo +
                 ", remark = " + remark +
             "}";
         }

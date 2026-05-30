@@ -5,6 +5,9 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.wms.entity.*;
+import com.wms.mapper.GoodsBatchMapper;
+import com.wms.mapper.GoodsMapper;
+import com.wms.mapper.LossReportMapper;
 import com.wms.mapper.SalesReturnDetailMapper;
 import com.wms.mapper.SalesReturnMapper;
 import com.wms.service.IGoodsService;
@@ -17,13 +20,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-/**
- * 退货单服务实现类
- */
 @Service
 public class SalesReturnServiceImpl extends ServiceImpl<SalesReturnMapper, SalesReturn> implements ISalesReturnService {
 
@@ -43,15 +44,20 @@ public class SalesReturnServiceImpl extends ServiceImpl<SalesReturnMapper, Sales
     private SalesReturnDetailMapper salesReturnDetailMapper;
 
     @Autowired
+    private GoodsMapper goodsMapper;
+
+    @Autowired
+    private GoodsBatchMapper goodsBatchMapper;
+
+    @Autowired
+    private LossReportMapper lossReportMapper;
+
+    @Autowired
     private IRecordService recordService;
 
-    /**
-     * 发起退货申请
-     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Integer applyReturn(ReturnApplyDTO returnApplyDTO) {
-        // 1. 参数校验
         if (returnApplyDTO.getSalesId() == null) {
             throw new RuntimeException("原销售单ID不能为空");
         }
@@ -59,164 +65,220 @@ public class SalesReturnServiceImpl extends ServiceImpl<SalesReturnMapper, Sales
             throw new RuntimeException("退货商品明细不能为空");
         }
 
-        // 2. 校验原销售单是否存在
         Sales sales = salesService.getById(returnApplyDTO.getSalesId());
         if (sales == null) {
             throw new RuntimeException("原销售单不存在");
         }
 
-        // 3. 遍历校验退货数量是否合法
+        // 一个销售单只允许一条退货记录（一一对应）
+        LambdaQueryWrapper<SalesReturn> existCheck = new LambdaQueryWrapper<>();
+        existCheck.eq(SalesReturn::getSalesId, returnApplyDTO.getSalesId());
+        if (this.count(existCheck) > 0) {
+            throw new RuntimeException("该销售单已存在退货记录，不能重复退货");
+        }
+
         BigDecimal totalAmount = BigDecimal.ZERO;
         for (ReturnApplyDTO.ReturnItemDTO item : returnApplyDTO.getItems()) {
-            // 校验商品是否存在
             Goods goods = goodsService.getById(item.getGoodsId());
             if (goods == null) {
                 throw new RuntimeException("商品ID【" + item.getGoodsId() + "】不存在");
             }
-
-            // 校验退货数量不能为负数
             if (item.getReturnCount() == null || item.getReturnCount() <= 0) {
                 throw new RuntimeException("商品【" + goods.getName() + "】退货数量必须大于0");
             }
-
-            // 计算小计金额
             BigDecimal subtotal = goods.getRetailPrice()
                     .multiply(BigDecimal.valueOf(item.getReturnCount()));
             totalAmount = totalAmount.add(subtotal);
         }
 
-        // 4. 生成退货单流水号（RET + 年月日时分秒）
-        String returnNum = generateReturnNo();
+        String returnNo = sales.getOrderNum() != null
+                ? "TH" + sales.getOrderNum()
+                : "TH" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
-        // 5. 插入退货主表（状态默认为0待退款）
         SalesReturn salesReturn = new SalesReturn();
-        salesReturn.setReturnNum(returnNum); // 退货单唯一流水号 (RET...)
-        // 关联原销售单号，如果原销售单号为空则使用退货流水号作为兜底
-        salesReturn.setReturnNo(sales.getOrderNum() != null ? sales.getOrderNum() : returnNum);
+        salesReturn.setReturnNum(returnNo);
+        salesReturn.setReturnNo(returnNo);
         salesReturn.setSalesId(returnApplyDTO.getSalesId());
         salesReturn.setReturnReason(returnApplyDTO.getReturnReason());
         salesReturn.setReturnAmount(totalAmount);
-        salesReturn.setStatus(0); // 0待退款
+        salesReturn.setStatus(0);
         salesReturn.setCreateTime(LocalDateTime.now());
-        salesReturn.setUserId(null); // 可从当前登录用户获取
+        salesReturn.setIsResalable(returnApplyDTO.getIsResalable() != null ? returnApplyDTO.getIsResalable() : 0);
+        salesReturn.setType(returnApplyDTO.getType() != null ? returnApplyDTO.getType() : 1);
 
-        boolean saveResult = this.save(salesReturn);
-        if (!saveResult) {
+        if (!this.save(salesReturn)) {
             throw new RuntimeException("退货单保存失败");
         }
 
-        // 6. 获取自动生成的主键ID
         Integer returnId = salesReturn.getId();
 
-        // 7. 批量插入退货明细表
         List<SalesReturnDetail> detailList = new java.util.ArrayList<>();
         for (ReturnApplyDTO.ReturnItemDTO item : returnApplyDTO.getItems()) {
             Goods goods = goodsService.getById(item.getGoodsId());
-            
+
             SalesReturnDetail detail = new SalesReturnDetail();
             detail.setReturnId(returnId);
             detail.setGoodsId(item.getGoodsId());
             detail.setReturnCount(item.getReturnCount());
             detail.setPrice(goods.getRetailPrice());
             detail.setSubtotal(goods.getRetailPrice().multiply(BigDecimal.valueOf(item.getReturnCount())));
-            
+            detail.setExchangeGoodsId(item.getExchangeGoodsId());
+
             detailList.add(detail);
         }
 
-        boolean saveBatchResult = salesReturnDetailService.saveBatch(detailList);
-        if (!saveBatchResult) {
+        if (!salesReturnDetailService.saveBatch(detailList)) {
             throw new RuntimeException("退货明细保存失败");
         }
 
-        // 8. 返回退货单ID
         return returnId;
     }
 
-    /**
-     * 确认退款并回滚库存
-     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Boolean confirmRefund(Integer returnId) {
-        // 1. 校验退货单是否存在
         SalesReturn salesReturn = this.getById(returnId);
         if (salesReturn == null) {
             throw new RuntimeException("退货单不存在");
         }
-
-        // 2. 校验退货单状态
         if (salesReturn.getStatus() == 1) {
             throw new RuntimeException("该退货单已退款，无需重复操作");
         }
 
-        // 3. 查询退货明细
         LambdaQueryWrapper<SalesReturnDetail> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(SalesReturnDetail::getReturnId, returnId);
         List<SalesReturnDetail> detailList = salesReturnDetailService.list(queryWrapper);
-
         if (detailList == null || detailList.isEmpty()) {
             throw new RuntimeException("退货明细不存在");
         }
 
-        // 4. 遍历明细，回滚库存
+        int isResalable = salesReturn.getIsResalable() != null ? salesReturn.getIsResalable() : 0;
+
         for (SalesReturnDetail detail : detailList) {
-            // 查询商品信息
             Goods goods = goodsService.getById(detail.getGoodsId());
             if (goods == null) {
                 throw new RuntimeException("商品ID【" + detail.getGoodsId() + "】不存在");
             }
 
-            // 增加库存
-            Integer currentCount = goods.getCount() == null ? 0 : goods.getCount();
-            goods.setCount(currentCount + detail.getReturnCount());
-            
-            boolean updateResult = goodsService.updateById(goods);
-            if (!updateResult) {
-                throw new RuntimeException("商品【" + goods.getName() + "】库存回滚失败");
-            }
+            if (isResalable == 0) {
+                // 可二次销售 → 恢复库存（goods_batch + goods）
+                restoreBatchStock(goods, detail.getReturnCount());
+                goods.setCount(goods.getCount() + detail.getReturnCount());
+                goodsService.updateById(goods);
 
-            // 4.1 记录出入库流水
-            Record record = new Record();
-            record.setGoods(detail.getGoodsId());
-            record.setCount(detail.getReturnCount()); // 数量为正
-            record.setOperationType("销售退货");
-            record.setRefOrderNum(salesReturn.getReturnNum());
-            record.setAdminId(salesReturn.getUserId());
-            record.setCreatetime(LocalDateTime.now());
-            record.setStatus(1); // 已完成
-            recordService.save(record);
+                Record record = new Record();
+                record.setGoods(detail.getGoodsId());
+                record.setCount(detail.getReturnCount());
+                record.setOperationType("销售退货");
+                record.setRefOrderNum(salesReturn.getReturnNum());
+                record.setAdminId(salesReturn.getUserId());
+                record.setCreatetime(LocalDateTime.now());
+                record.setStatus(1);
+                record.setRemark("退货入库（可二次销售）");
+                recordService.save(record);
+
+            } else {
+                // 不可二次销售 → 退款但不恢复库存，自动生成损耗单
+                LossReport lossReport = new LossReport();
+                lossReport.setLossNo("LOSS" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+                        + (int)(Math.random() * 900000 + 100000));
+                lossReport.setGoodsId(detail.getGoodsId());
+
+                // 获取批次进价信息
+                LambdaQueryWrapper<GoodsBatch> batchQuery = new LambdaQueryWrapper<>();
+                batchQuery.eq(GoodsBatch::getGoodsId, detail.getGoodsId())
+                          .orderByDesc(GoodsBatch::getCreateTime).last("LIMIT 1");
+                List<GoodsBatch> batches = goodsBatchMapper.selectList(batchQuery);
+                if (batches != null && !batches.isEmpty()) {
+                    GoodsBatch batch = batches.get(0);
+                    lossReport.setBatchId(batch.getId());
+                    lossReport.setBatchNo(batch.getBatchNo());
+                    lossReport.setPurchasePrice(batch.getPurchasePrice());
+                }
+
+                lossReport.setLossCount(detail.getReturnCount());
+                lossReport.setLossType(2); // 销售损耗
+                if (lossReport.getPurchasePrice() != null) {
+                    lossReport.setLossAmount(lossReport.getPurchasePrice()
+                            .multiply(BigDecimal.valueOf(detail.getReturnCount()))
+                            .setScale(2, RoundingMode.HALF_UP));
+                }
+                lossReport.setReason("销售退货，商品影响二次销售，自动生成损耗单。原退货单号:" + salesReturn.getReturnNum());
+                lossReport.setStatus(0); // 待审核
+                lossReport.setReporterId(salesReturn.getUserId());
+                lossReport.setCreateTime(LocalDateTime.now());
+                lossReportMapper.insert(lossReport);
+
+                Record record = new Record();
+                record.setGoods(detail.getGoodsId());
+                record.setCount(detail.getReturnCount());
+                record.setOperationType("销售退货");
+                record.setRefOrderNum(salesReturn.getReturnNum());
+                record.setAdminId(salesReturn.getUserId());
+                record.setCreatetime(LocalDateTime.now());
+                record.setStatus(1);
+                record.setRemark("退货退款（不可二次销售，已生成损耗单" + lossReport.getLossNo() + "）");
+                recordService.save(record);
+            }
         }
 
-        // 5. 更新退货单状态为已退款
+        // 换货处理：扣减换货目标商品库存
+        if (salesReturn.getType() != null && salesReturn.getType() == 2) {
+            for (SalesReturnDetail detail : detailList) {
+                if (detail.getExchangeGoodsId() == null) continue;
+                Goods exchangeGoods = goodsService.getById(detail.getExchangeGoodsId());
+                if (exchangeGoods == null) {
+                    throw new RuntimeException("换货目标商品ID【" + detail.getExchangeGoodsId() + "】不存在");
+                }
+                // FIFO 扣减换货商品批次库存
+                goodsService.deductStockFIFO(exchangeGoods.getId(), exchangeGoods.getStorage(), detail.getReturnCount());
+                exchangeGoods.setCount(exchangeGoods.getCount() - detail.getReturnCount());
+                goodsService.updateById(exchangeGoods);
+
+                Record exchangeRecord = new Record();
+                exchangeRecord.setGoods(detail.getExchangeGoodsId());
+                exchangeRecord.setCount(-detail.getReturnCount());
+                exchangeRecord.setOperationType("换货出库");
+                exchangeRecord.setRefOrderNum(salesReturn.getReturnNum());
+                exchangeRecord.setAdminId(salesReturn.getUserId());
+                exchangeRecord.setCreatetime(LocalDateTime.now());
+                exchangeRecord.setStatus(1);
+                exchangeRecord.setRemark("换货出库，原商品ID:" + detail.getGoodsId() + "，数量:" + detail.getReturnCount());
+                recordService.save(exchangeRecord);
+            }
+        }
+
         salesReturn.setStatus(1);
         salesReturn.setRefundTime(LocalDateTime.now());
-        boolean updateResult = this.updateById(salesReturn);
-        
-        return updateResult;
+        return this.updateById(salesReturn);
     }
 
-    /**
-     * 分页查询退货单列表
-     */
     @Override
-    public IPage<SalesReturnVO> listPage(Page<SalesReturnVO> page, String returnNo, Integer status) {
-        return salesReturnMapper.selectReturnPage(page, returnNo, status);
+    public IPage<SalesReturnVO> listPage(Page<SalesReturnVO> page, String returnNo, Integer status, Integer userId) {
+        return salesReturnMapper.selectReturnPage(page, returnNo, status, userId);
     }
 
-    /**
-     * 查询退货明细列表
-     */
     @Override
     public List<ReturnDetailVO> getDetails(Integer returnId) {
         return salesReturnDetailMapper.selectDetailsByReturnId(returnId);
     }
 
     /**
-     * 生成退货单号
-     * 格式：RET + 年月日时分秒（如：RET20260501153025）
+     * 恢复批次库存：追加到最近一批
      */
+    private void restoreBatchStock(Goods goods, int count) {
+        LambdaQueryWrapper<GoodsBatch> batchQuery = new LambdaQueryWrapper<>();
+        batchQuery.eq(GoodsBatch::getGoodsId, goods.getId())
+                  .orderByDesc(GoodsBatch::getCreateTime).last("LIMIT 1");
+        List<GoodsBatch> batches = goodsBatchMapper.selectList(batchQuery);
+        if (batches != null && !batches.isEmpty()) {
+            GoodsBatch latest = batches.get(0);
+            latest.setCurrentCount(latest.getCurrentCount() + count);
+            goodsBatchMapper.updateById(latest);
+        }
+    }
+
     private String generateReturnNo() {
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        return "RET" + timestamp;
+        return "RET" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
     }
 }

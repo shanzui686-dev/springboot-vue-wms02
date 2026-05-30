@@ -13,6 +13,8 @@
         <result column="order_num" property="orderNum" />
         <result column="create_time" property="createTime" />
         <result column="return_status" property="returnStatus" />
+        <result column="payment_method" property="paymentMethod" />
+        <result column="status" property="status" />
     </resultMap>
 
     <!-- 分页查询销售单列表（连表查询收银员姓名和退货状态） -->
@@ -26,11 +28,13 @@
             s.change_amount,
             IFNULL(s.order_num, CONCAT('SO', LPAD(s.id, 8, '0'))) AS order_num,
             s.create_time,
-            CASE 
+            CASE
                 WHEN sr.id IS NOT NULL AND sr.status = 1 THEN 2
                 WHEN sr.id IS NOT NULL AND sr.status = 0 THEN 1
                 ELSE 0
-            END AS return_status
+            END AS return_status,
+            s.payment_method,
+            s.status
         FROM sales s
         LEFT JOIN user u ON s.user_id = u.id
         LEFT JOIN sales_return sr ON s.id = sr.sales_id
@@ -44,6 +48,9 @@
             </if>
             <if test="endDate != null and endDate != ''">
                 AND s.create_time &lt;= #{endDate}
+            </if>
+            <if test="userId != null">
+                AND s.user_id = #{userId}
             </if>
         </where>
         ORDER BY s.create_time DESC

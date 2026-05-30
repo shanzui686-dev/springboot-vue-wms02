@@ -35,6 +35,9 @@ public class SalesDTO implements Serializable {
     @Schema(description = "找零金额")
     private BigDecimal changeAmount;
 
+    @Schema(description = "支付方式(1:现金, 2:扫码)")
+    private Integer paymentMethod;
+
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
 
@@ -80,6 +83,9 @@ public class SalesDTO implements Serializable {
     public void setChangeAmount(BigDecimal changeAmount) {
         this.changeAmount = changeAmount;
     }
+
+    public Integer getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(Integer paymentMethod) { this.paymentMethod = paymentMethod; }
 
     public LocalDateTime getCreateTime() {
         return createTime;

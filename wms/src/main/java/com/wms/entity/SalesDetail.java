@@ -44,6 +44,13 @@ public class SalesDetail implements Serializable {
     @TableField("subtotal")
     private BigDecimal subtotal;
 
+    @Schema(description = "明细状态(0:正常, 1:退货, 2:换货)")
+    private Integer status;
+
+    @Schema(description = "出库批次号")
+    @TableField("batch_no")
+    private String batchNo;
+
     public Integer getId() {
         return id;
     }
@@ -91,6 +98,12 @@ public class SalesDetail implements Serializable {
     public void setSubtotal(BigDecimal subtotal) {
         this.subtotal = subtotal;
     }
+
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
+
+    public String getBatchNo() { return batchNo; }
+    public void setBatchNo(String batchNo) { this.batchNo = batchNo; }
 
     @Override
     public String toString() {

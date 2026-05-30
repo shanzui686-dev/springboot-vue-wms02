@@ -16,6 +16,12 @@ public class ReturnApplyDTO {
     @Schema(description = "退货原因")
     private String returnReason;
 
+    @Schema(description = "是否影响二次销售(0可/1不可)")
+    private Integer isResalable;
+
+    @Schema(description = "类型(1退货/2换货)")
+    private Integer type;
+
     @Schema(description = "退货商品明细列表")
     private List<ReturnItemDTO> items;
 
@@ -35,6 +41,12 @@ public class ReturnApplyDTO {
         this.returnReason = returnReason;
     }
 
+    public Integer getIsResalable() { return isResalable; }
+    public void setIsResalable(Integer isResalable) { this.isResalable = isResalable; }
+
+    public Integer getType() { return type; }
+    public void setType(Integer type) { this.type = type; }
+
     public List<ReturnItemDTO> getItems() {
         return items;
     }
@@ -50,23 +62,19 @@ public class ReturnApplyDTO {
         @Schema(description = "商品ID")
         private Integer goodsId;
 
-        @Schema(description = "退货数量")
+        @Schema(description = "退货/换货数量")
         private Integer returnCount;
 
-        public Integer getGoodsId() {
-            return goodsId;
-        }
+        @Schema(description = "换货目标商品ID（type=2换货时使用）")
+        private Integer exchangeGoodsId;
 
-        public void setGoodsId(Integer goodsId) {
-            this.goodsId = goodsId;
-        }
+        public Integer getGoodsId() { return goodsId; }
+        public void setGoodsId(Integer goodsId) { this.goodsId = goodsId; }
 
-        public Integer getReturnCount() {
-            return returnCount;
-        }
+        public Integer getReturnCount() { return returnCount; }
+        public void setReturnCount(Integer returnCount) { this.returnCount = returnCount; }
 
-        public void setReturnCount(Integer returnCount) {
-            this.returnCount = returnCount;
-        }
+        public Integer getExchangeGoodsId() { return exchangeGoodsId; }
+        public void setExchangeGoodsId(Integer exchangeGoodsId) { this.exchangeGoodsId = exchangeGoodsId; }
     }
 }

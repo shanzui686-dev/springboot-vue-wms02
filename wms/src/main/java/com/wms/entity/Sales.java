@@ -41,6 +41,13 @@ public class Sales implements Serializable {
     @TableField("change_amount")
     private BigDecimal changeAmount;
 
+    @Schema(description = "支付方式(1:现金, 2:扫码)")
+    @TableField("payment_method")
+    private Integer paymentMethod;
+
+    @Schema(description = "状态(0:正常, 1:已退款)")
+    private Integer status;
+
     @Schema(description = "订单流水号")
     @TableField("order_num")
     private String orderNum;
@@ -89,6 +96,22 @@ public class Sales implements Serializable {
         this.changeAmount = changeAmount;
     }
 
+    public Integer getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(Integer paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+
     public String getOrderNum() {
         return orderNum;
     }
@@ -113,6 +136,8 @@ public class Sales implements Serializable {
             ", totalAmount = " + totalAmount +
             ", realAmount = " + realAmount +
             ", changeAmount = " + changeAmount +
+            ", paymentMethod = " + paymentMethod +
+            ", status = " + status +
             ", orderNum = " + orderNum +
             ", createTime = " + createTime +
         "}";

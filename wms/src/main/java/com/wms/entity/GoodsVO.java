@@ -38,6 +38,10 @@ public class GoodsVO implements Serializable {
     @Schema(description = "数量")
     private Integer count;
 
+    @Schema(description = "预占数量")
+    @TableField("reserved_count")
+    private Integer reservedCount;
+
     @Schema(description = "预警下限")
     @TableField("min_count")
     private Integer minCount;
@@ -113,6 +117,14 @@ public class GoodsVO implements Serializable {
 
     public void setCount(Integer count) {
         this.count = count;
+    }
+
+    public Integer getReservedCount() {
+        return reservedCount;
+    }
+
+    public void setReservedCount(Integer reservedCount) {
+        this.reservedCount = reservedCount;
     }
 
     public Integer getMinCount() {
@@ -211,6 +223,7 @@ public class GoodsVO implements Serializable {
             ", storage = " + storage +
             ", goodsType = " + goodsType +
             ", count = " + count +
+            ", reservedCount = " + reservedCount +
             ", minCount = " + minCount +
             ", barcode = " + barcode +
             ", specs = " + specs +

@@ -23,6 +23,11 @@ wms/target/
 # 忽略依赖包目录 (必须忽略，否则会导致仓库极其庞大)
 node_modules/
 workspace/node_modules/
+workspace/wms-web/node_modules/
+
+# 忽略 npm 缓存
+.npm-cache/
+workspace/wms-web/.npm-cache/
 
 # 忽略打包生成的 dist 目录
 dist/

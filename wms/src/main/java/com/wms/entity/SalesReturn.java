@@ -22,7 +22,7 @@ public class SalesReturn implements Serializable {
     private Integer id;
 
     @Schema(description = "退货单号")
-    @TableField(value = "order_num", insertStrategy = com.baomidou.mybatisplus.annotation.FieldStrategy.NEVER)
+    @TableField("order_num")
     private String returnNo;
 
     @Schema(description = "原销售单ID")
@@ -56,6 +56,13 @@ public class SalesReturn implements Serializable {
     @Schema(description = "操作收银员ID")
     @TableField("user_id")
     private Integer userId;
+
+    @Schema(description = "是否影响二次销售(0:可, 1:不可)")
+    @TableField("is_resalable")
+    private Integer isResalable;
+
+    @Schema(description = "类型(1:退货, 2:换货)")
+    private Integer type;
 
     public Integer getId() {
         return id;
@@ -129,13 +136,14 @@ public class SalesReturn implements Serializable {
         this.refundTime = refundTime;
     }
 
-    public Integer getUserId() {
-        return userId;
-    }
+    public Integer getUserId() { return userId; }
+    public void setUserId(Integer userId) { this.userId = userId; }
 
-    public void setUserId(Integer userId) {
-        this.userId = userId;
-    }
+    public Integer getIsResalable() { return isResalable; }
+    public void setIsResalable(Integer isResalable) { this.isResalable = isResalable; }
+
+    public Integer getType() { return type; }
+    public void setType(Integer type) { this.type = type; }
 
     @Override
     public String toString() {

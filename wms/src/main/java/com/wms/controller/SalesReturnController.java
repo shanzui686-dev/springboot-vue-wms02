@@ -75,14 +75,10 @@ public class SalesReturnController {
     public Result listPage(@RequestParam(defaultValue = "1") Integer page,
                            @RequestParam(defaultValue = "10") Integer limit,
                            @RequestParam(required = false) String returnNo,
-                           @RequestParam(required = false) Integer status) {
-        // 创建分页对象
+                           @RequestParam(required = false) Integer status,
+                           @RequestParam(required = false) Integer userId) {
         Page<SalesReturnVO> pageParam = new Page<>(page, limit);
-        
-        // 调用服务层方法，执行分页查询
-        IPage<SalesReturnVO> result = salesReturnService.listPage(pageParam, returnNo, status);
-        
-        // 返回查询结果
+        IPage<SalesReturnVO> result = salesReturnService.listPage(pageParam, returnNo, status, userId);
         return Result.suc(result);
     }
 

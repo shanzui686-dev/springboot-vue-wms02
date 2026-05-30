@@ -40,53 +40,30 @@ public class SalesReturnDetail implements Serializable {
     @TableField("subtotal")
     private BigDecimal subtotal;
 
-    public Integer getId() {
-        return id;
-    }
+    @Schema(description = "换货目标商品ID")
+    @TableField("exchange_goods_id")
+    private Integer exchangeGoodsId;
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
 
-    public Integer getReturnId() {
-        return returnId;
-    }
+    public Integer getReturnId() { return returnId; }
+    public void setReturnId(Integer returnId) { this.returnId = returnId; }
 
-    public void setReturnId(Integer returnId) {
-        this.returnId = returnId;
-    }
+    public Integer getGoodsId() { return goodsId; }
+    public void setGoodsId(Integer goodsId) { this.goodsId = goodsId; }
 
-    public Integer getGoodsId() {
-        return goodsId;
-    }
+    public Integer getReturnCount() { return returnCount; }
+    public void setReturnCount(Integer returnCount) { this.returnCount = returnCount; }
 
-    public void setGoodsId(Integer goodsId) {
-        this.goodsId = goodsId;
-    }
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
 
-    public Integer getReturnCount() {
-        return returnCount;
-    }
+    public BigDecimal getSubtotal() { return subtotal; }
+    public void setSubtotal(BigDecimal subtotal) { this.subtotal = subtotal; }
 
-    public void setReturnCount(Integer returnCount) {
-        this.returnCount = returnCount;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
-
-    public BigDecimal getSubtotal() {
-        return subtotal;
-    }
-
-    public void setSubtotal(BigDecimal subtotal) {
-        this.subtotal = subtotal;
-    }
+    public Integer getExchangeGoodsId() { return exchangeGoodsId; }
+    public void setExchangeGoodsId(Integer exchangeGoodsId) { this.exchangeGoodsId = exchangeGoodsId; }
 
     @Override
     public String toString() {

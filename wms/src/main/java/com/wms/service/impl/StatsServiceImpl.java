@@ -3,8 +3,10 @@ package com.wms.service.impl;
 import com.wms.entity.CategoryRatioVO;
 import com.wms.entity.Goods;
 import com.wms.entity.GrossProfitVO;
+import com.wms.entity.ProductSalesVO;
 import com.wms.entity.RestockSuggestionVO;
 import com.wms.entity.SalesTrendVO;
+import com.wms.entity.TodaySummaryVO;
 import com.wms.entity.TurnoverRateVO;
 import com.wms.mapper.StatsMapper;
 import com.wms.service.IStatsService;
@@ -30,6 +32,15 @@ public class StatsServiceImpl implements IStatsService {
 
     @Autowired
     private StatsMapper statsMapper;
+
+    /**
+     * 获取今日销售统计汇总
+     * @return 今日销售统计
+     */
+    @Override
+    public TodaySummaryVO getTodaySummary() {
+        return statsMapper.getTodaySummary();
+    }
 
     /**
      * 销售趋势统计（按天）
@@ -116,5 +127,10 @@ public class StatsServiceImpl implements IStatsService {
     @Override
     public List<Goods> getWarningList() {
         return statsMapper.getWarningList();
+    }
+
+    @Override
+    public List<ProductSalesVO> getProductSales() {
+        return statsMapper.getProductSales();
     }
 }

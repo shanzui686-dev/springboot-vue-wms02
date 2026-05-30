@@ -37,6 +37,9 @@ public class Supplier implements Serializable {
     @Schema(description = "状态")
     private Integer status;
 
+    @Schema(description = "营业执照")
+    private String businessLicense;
+
     @Schema(description = "备注")
     private String remark;
 
@@ -87,6 +90,9 @@ public class Supplier implements Serializable {
     public void setStatus(Integer status) {
         this.status = status;
     }
+
+    public String getBusinessLicense() { return businessLicense; }
+    public void setBusinessLicense(String businessLicense) { this.businessLicense = businessLicense; }
 
     public String getRemark() {
         return remark;

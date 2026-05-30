@@ -22,7 +22,10 @@
         select a.*,b.name goodsname,c.name storagename,d.name goodstypename,
             (select u.name from user u where u.id=a.userid)username,
             (select u.name from user u where u.id=a.admin_id)adminname
-        from record a ,goods b,storage c,goodsType d
+        from record a
+        left join goods b on a.goods=b.id
+        left join storage c on b.storage=c.id
+        left join goodsType d on b.goodsType=d.id
         ${ew.customSqlSegment}
     </select>
 

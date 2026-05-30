@@ -2,6 +2,24 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wms.mapper.StatsMapper">
 
+    <!-- 今日销售统计汇总（含损耗） -->
+    <select id="getTodaySummary" resultType="com.wms.entity.TodaySummaryVO">
+        SELECT
+            COALESCE((SELECT SUM(total_amount) FROM sales
+                       WHERE DATE(create_time) = CURDATE()), 0) AS todaySales,
+            COALESCE(SUM(sd.count * (sd.price - COALESCE(g.purchase_price, 0))), 0) AS todayProfit,
+            (SELECT COUNT(*) FROM sales WHERE DATE(create_time) = CURDATE()) AS todayOrders,
+            COALESCE((SELECT SUM(loss_amount) FROM loss_report
+                       WHERE DATE(create_time) = CURDATE() AND status = 1), 0) AS todayLoss,
+            COALESCE(SUM(sd.count * (sd.price - COALESCE(g.purchase_price, 0))), 0)
+              - COALESCE((SELECT SUM(loss_amount) FROM loss_report
+                           WHERE DATE(create_time) = CURDATE() AND status = 1), 0) AS netProfit
+        FROM sales s
+        LEFT JOIN sales_detail sd ON s.id = sd.sales_id
+        LEFT JOIN goods g ON sd.goods_id = g.id
+        WHERE DATE(s.create_time) = CURDATE()
+    </select>
+
     <!-- 销售趋势统计（按天） -->
     <select id="getSalesTrend" resultType="com.wms.entity.SalesTrendVO">
         SELECT
@@ -55,39 +73,58 @@
         SELECT
             g.id AS goodsId,
             g.name AS goodsName,
-            g.count AS currentStock,
+            (g.count - COALESCE(g.reserved_count, 0)) AS currentStock,
             COALESCE(SUM(sd.count), 0) AS totalSales,
             CASE
-                WHEN g.count > 0 THEN ROUND(COALESCE(SUM(sd.count), 0) * 100.0 / g.count, 2)
+                WHEN (g.count - COALESCE(g.reserved_count, 0)) > 0
+                  THEN ROUND(COALESCE(SUM(sd.count), 0) * 100.0 / (g.count - COALESCE(g.reserved_count, 0)), 2)
                 ELSE 0
             END AS turnoverRate
         FROM goods g
         LEFT JOIN sales_detail sd ON g.id = sd.goods_id
         LEFT JOIN sales s ON sd.sales_id = s.id AND s.create_time >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-        GROUP BY g.id, g.name, g.count
+        GROUP BY g.id, g.name, g.count, g.reserved_count
         HAVING totalSales > 0
         ORDER BY turnoverRate DESC
         LIMIT 10
     </select>
 
-    <!-- 库存周转率分析（最低前10名） -->
+    <!-- 库存周转率分析（最低前10名） — 可用库存 -->
     <select id="getBottomTurnoverRate" resultType="com.wms.entity.TurnoverRateVO">
         SELECT
             g.id AS goodsId,
             g.name AS goodsName,
-            g.count AS currentStock,
+            (g.count - COALESCE(g.reserved_count, 0)) AS currentStock,
             COALESCE(SUM(sd.count), 0) AS totalSales,
             CASE
-                WHEN g.count > 0 THEN ROUND(COALESCE(SUM(sd.count), 0) * 100.0 / g.count, 2)
+                WHEN (g.count - COALESCE(g.reserved_count, 0)) > 0
+                  THEN ROUND(COALESCE(SUM(sd.count), 0) * 100.0 / (g.count - COALESCE(g.reserved_count, 0)), 2)
                 ELSE 0
             END AS turnoverRate
         FROM goods g
         LEFT JOIN sales_detail sd ON g.id = sd.goods_id
         LEFT JOIN sales s ON sd.sales_id = s.id AND s.create_time >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-        GROUP BY g.id, g.name, g.count
+        GROUP BY g.id, g.name, g.count, g.reserved_count
         HAVING totalSales > 0
         ORDER BY turnoverRate ASC
         LIMIT 10
+    </select>
+
+    <!-- 按商品销售统计 -->
+    <select id="getProductSales" resultType="com.wms.entity.ProductSalesVO">
+        SELECT
+            g.id AS goodsId,
+            g.name AS goodsName,
+            COALESCE(SUM(sd.count), 0) AS totalQuantity,
+            COALESCE(SUM(sd.subtotal), 0) AS totalAmount,
+            COALESCE(SUM(sd.count * (sd.price - COALESCE(g.purchase_price, 0))), 0) AS totalProfit
+        FROM goods g
+        LEFT JOIN sales_detail sd ON g.id = sd.goods_id
+        LEFT JOIN sales s ON sd.sales_id = s.id
+          AND s.create_time >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        GROUP BY g.id, g.name
+        HAVING totalQuantity > 0
+        ORDER BY totalAmount DESC
     </select>
 
     <!-- 智能补货建议 -->
@@ -100,8 +137,14 @@
             gt.name AS categoryName,
             COALESCE(sales_stats.daily_avg_sales, 0) AS dailyAverageSales,
             g.count AS currentStock,
-            CEIL(COALESCE(sales_stats.daily_avg_sales, 0) * #{cycleDays} + g.min_count - g.count) AS suggestQuantity,
-            g.min_count AS safetyStock
+            CEIL(
+                COALESCE(sales_stats.daily_avg_sales, 0) * #{cycleDays}
+                + g.min_count
+                - (g.count - COALESCE(g.reserved_count, 0))
+            ) AS suggestQuantity,
+            g.min_count AS safetyStock,
+            g.supplier_id AS supplierId,
+            COALESCE(g.purchase_price, 0) AS purchasePrice
         FROM goods g
         LEFT JOIN goodstype gt ON g.goodsType = gt.id
         LEFT JOIN (
@@ -113,29 +156,24 @@
             WHERE s.create_time >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
             GROUP BY sd.goods_id
         ) sales_stats ON g.id = sales_stats.goods_id
-        WHERE (COALESCE(sales_stats.daily_avg_sales, 0) * #{cycleDays} + g.min_count - g.count) > 0
+        WHERE (
+            COALESCE(sales_stats.daily_avg_sales, 0) * #{cycleDays}
+            + g.min_count
+            - (g.count - COALESCE(g.reserved_count, 0))
+        ) > 0
         ORDER BY suggestQuantity DESC
     </select>
 
-    <!-- 库存预警列表 -->
+    <!-- 库存预警列表（基于可用库存 = 总库存 - 预占数量） -->
     <select id="getWarningList" resultType="com.wms.entity.Goods">
         SELECT
-            id,
-            name,
-            storage,
-            goodsType,
-            count,
-            min_count,
-            barcode,
-            specs,
-            unit,
-            retail_price,
-            purchase_price,
-            supplier_id,
-            remark
+            id, name, storage, goodsType,
+            count, reserved_count,
+            min_count, barcode, specs, unit,
+            retail_price, purchase_price, supplier_id, remark
         FROM goods
-        WHERE count &lt; min_count
-        ORDER BY count ASC
+        WHERE (count - COALESCE(reserved_count, 0)) &lt; min_count
+        ORDER BY (count - COALESCE(reserved_count, 0)) ASC
     </select>
 
 </mapper>

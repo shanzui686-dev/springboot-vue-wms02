@@ -1,6 +1,7 @@
 package com.wms.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.wms.entity.InboundDTO;
 import com.wms.entity.Purchase;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.wms.entity.PurchaseDTO;
@@ -49,14 +50,21 @@ public interface IPurchaseService extends IService<Purchase> {
     boolean createPurchase(PurchaseDTO purchaseDTO);
 
     /**
-     * 确认入库（更新状态为已入库，增加商品库存）
+     * 确认入库（新：需传入仓库和入库数量）
+     * @param inboundDTO 入库请求
+     * @return 是否成功
+     */
+    boolean inbound(InboundDTO inboundDTO);
+
+    /**
+     * 店长审核采购单（状态 0→1）
      * @param purchaseId 采购单ID
      * @return 是否成功
      */
-    boolean inbound(Integer purchaseId);
+    boolean audit(Integer purchaseId);
 
     /**
-     * 采购退货（更新状态为已退货，扣减商品库存）
+     * 采购退货（按批次FIFO扣减库存）
      * @param purchaseId 采购单ID
      * @return 是否成功
      */

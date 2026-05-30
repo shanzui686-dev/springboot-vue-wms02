@@ -2,6 +2,7 @@ package com.wms.controller;
 
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy;
+import com.wms.common.RequireRole;
 import com.wms.common.Result;
 import com.wms.entity.RestockExportVO;
 import com.wms.entity.RestockSuggestionVO;
@@ -31,10 +32,25 @@ public class StatsController {
     private IStatsService statsService;
 
     /**
+     * 今日销售统计汇总
+     * @return 今日销售额、毛利、订单数
+     */
+    @RequireRole({0})
+    @GetMapping("/todaySummary")
+    public Result getTodaySummary() {
+        try {
+            return Result.suc(statsService.getTodaySummary());
+        } catch (Exception e) {
+            return Result.fail("查询今日统计失败：" + e.getMessage());
+        }
+    }
+
+    /**
      * 销售趋势统计（按天）
      * @param days 天数，默认7天
      * @return 销售趋势数据
      */
+    @RequireRole({0})
     @GetMapping("/salesTrend")
     public Result getSalesTrend(@RequestParam(required = false, defaultValue = "7") Integer days) {
         try {
@@ -50,6 +66,7 @@ public class StatsController {
      * @param endDate 结束日期（格式：yyyy-MM-dd），默认为今天
      * @return 分类销售占比数据
      */
+    @RequireRole({0})
     @GetMapping("/categoryRatio")
     public Result getCategoryRatio(@RequestParam(required = false) String startDate,
                                     @RequestParam(required = false) String endDate) {
@@ -65,6 +82,7 @@ public class StatsController {
      * @param days 天数，默认7天
      * @return 毛利统计数据
      */
+    @RequireRole({0})
     @GetMapping("/grossProfit")
     public Result getGrossProfit(@RequestParam(required = false, defaultValue = "7") Integer days) {
         try {
@@ -78,6 +96,7 @@ public class StatsController {
      * 库存周转率分析（最高前10名）
      * @return 周转率最高的商品列表
      */
+    @RequireRole({0})
     @GetMapping("/turnoverRate/top")
     public Result getTopTurnoverRate() {
         try {
@@ -91,6 +110,7 @@ public class StatsController {
      * 库存周转率分析（最低前10名）
      * @return 周转率最低的商品列表
      */
+    @RequireRole({0})
     @GetMapping("/turnoverRate/bottom")
     public Result getBottomTurnoverRate() {
         try {
@@ -101,10 +121,11 @@ public class StatsController {
     }
 
     /**
-     * 智能补货建议
+     * 智能补货建议（店长+库存管理员可访问）
      * @param cycleDays 预计采购周期（天），默认7天
      * @return 需要补货的商品列表
      */
+    @RequireRole({0, 1})
     @GetMapping("/suggestRestock")
     public Result getSuggestRestock(@RequestParam(required = false, defaultValue = "7") Integer cycleDays) {
         try {
@@ -118,6 +139,7 @@ public class StatsController {
      * 库存预警列表
      * @return 库存低于预警值的商品列表
      */
+    @RequireRole({0, 1})
     @GetMapping("/warningList")
     public Result getWarningList() {
         try {
@@ -128,10 +150,24 @@ public class StatsController {
     }
 
     /**
-     * 导出智能补货建议为Excel
+     * 按商品销售统计（近30天）
+     */
+    @RequireRole({0})
+    @GetMapping("/productSales")
+    public Result getProductSales() {
+        try {
+            return Result.suc(statsService.getProductSales());
+        } catch (Exception e) {
+            return Result.fail("查询商品销售统计失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 导出智能补货建议为Excel（店长+库存管理员可访问）
      * @param cycleDays 预计采购周期（天），默认7天
      * @param response HTTP响应
      */
+    @RequireRole({0, 1})
     @GetMapping("/exportRestockSuggestion")
     public void exportRestockSuggestion(
             @RequestParam(required = false, defaultValue = "7") Integer cycleDays,

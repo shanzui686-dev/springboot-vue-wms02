@@ -46,7 +46,7 @@ public class User implements Serializable {
     @ApiModelProperty(value = "电话")
     private String phone;
 
-    @ApiModelProperty(value = "角色0超级管理员，1管理员，2普通账量")
+    @ApiModelProperty(value = "角色 0:店长 1:库管员(采购员) 2:收银员")
     private Integer roleId;
 
     @ApiModelProperty(value = "是否有效，Y有效，其他无效")

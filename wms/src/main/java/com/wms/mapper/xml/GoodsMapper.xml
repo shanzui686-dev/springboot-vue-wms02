@@ -1,41 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wms.mapper.GoodsMapper">
 
-    <!-- 查询近30天各商品的销售量 -->
+    <!-- 查询近30天各商品的销售量（不变） -->
     <select id="selectRecentSales" resultType="java.util.HashMap">
         SELECT
             sd.goods_id AS goodsId,
             SUM(sd.count) AS totalSales
         FROM sales_detail sd
-        INNER JOIN sales s ON sd.sales_id = s.id
-        WHERE s.create_time &gt;= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                 INNER JOIN sales s ON sd.sales_id = s.id
+        WHERE s.create_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)
         GROUP BY sd.goods_id
     </select>
 
-    <!-- 分页查询商品（包含供应商名称、分类名称、仓库名称） -->
+    <!-- 分页查询商品（新增 reserved_count + available 计算列） -->
     <select id="selectGoodsWithSupplier" resultType="com.wms.entity.GoodsVO">
         SELECT
-            g.id,
-            g.name,
-            g.storage,
-            g.goodsType,
-            g.count,
-            g.min_count AS minCount,
-            g.barcode,
-            g.specs,
-            g.unit,
-            g.retail_price AS retailPrice,
-            g.purchase_price AS purchasePrice,
-            g.supplier_id AS supplierId,
-            s.name AS supplierName,
-            gt.name AS categoryName,
-            st.name AS warehouseName,
-            g.remark
+        g.id,
+        g.name,
+        g.storage,
+        g.goodsType,
+        g.count,
+        g.reserved_count AS reservedCount,
+        g.min_count   AS minCount,
+        g.barcode,
+        g.specs,
+        g.unit,
+        g.retail_price   AS retailPrice,
+        g.purchase_price AS purchasePrice,
+        g.supplier_id    AS supplierId,
+        s.name  AS supplierName,
+        gt.name AS categoryName,
+        st.name AS warehouseName,
+        g.remark
         FROM goods g
-        LEFT JOIN supplier s ON g.supplier_id = s.id
-        LEFT JOIN goodstype gt ON g.goodsType = gt.id
-        LEFT JOIN storage st ON g.storage = st.id
+        LEFT JOIN supplier  s  ON g.supplier_id = s.id
+        LEFT JOIN goodstype gt ON g.goodsType  = gt.id
+        LEFT JOIN storage   st ON g.storage    = st.id
         <where>
             <if test="name != null and name != ''">
                 AND g.name LIKE CONCAT('%', #{name}, '%')
@@ -46,11 +48,113 @@
             <if test="storage != null">
                 AND g.storage = #{storage}
             </if>
+            <if test="supplierId != null">
+                AND g.supplier_id = #{supplierId}
+            </if>
             <if test="showUrgentOnly != null and showUrgentOnly == true">
-                AND g.count &lt;= g.min_count
+                AND (g.count - COALESCE(g.reserved_count, 0)) &lt;= g.min_count
             </if>
         </where>
         ORDER BY g.id DESC
+    </select>
+    <!-- ========== 以下为新增查询 ========== -->
+
+    <!-- 某商品在所有仓库的批次库存 -->
+    <select id="selectBatchesByGoodsId" resultType="com.wms.entity.GoodsBatch">
+        SELECT
+            gb.id,
+            gb.goods_id      AS goodsId,
+            gb.batch_no      AS batchNo,
+            gb.supplier_id   AS supplierId,
+            gb.storage_id    AS storageId,
+            gb.purchase_price AS purchasePrice,
+            gb.initial_count AS initialCount,
+            gb.current_count AS currentCount,
+            gb.purchase_id   AS purchaseId,
+            gb.create_time   AS createTime
+        FROM goods_batch gb
+        WHERE gb.goods_id = #{goodsId}
+          AND gb.current_count > 0
+        ORDER BY gb.storage_id, gb.create_time ASC
+    </select>
+
+    <!-- FIFO：查询可出库批次，按入库时间升序 -->
+    <select id="selectAvailableBatchesForSale" resultType="com.wms.entity.GoodsBatch">
+        SELECT
+            gb.id,
+            gb.goods_id      AS goodsId,
+            gb.batch_no      AS batchNo,
+            gb.supplier_id   AS supplierId,
+            gb.storage_id    AS storageId,
+            gb.purchase_price AS purchasePrice,
+            gb.initial_count AS initialCount,
+            gb.current_count AS currentCount,
+            gb.purchase_id   AS purchaseId,
+            gb.create_time   AS createTime
+        FROM goods_batch gb
+        WHERE gb.goods_id   = #{goodsId}
+          AND gb.storage_id = #{storageId}
+          AND gb.current_count > 0
+        ORDER BY gb.create_time ASC
+    </select>
+
+    <!-- 批次库存总览（跨商品+供应商+批次筛选） -->
+    <select id="selectBatchList" resultType="java.util.HashMap">
+        SELECT
+            gb.id           AS batchId,
+            gb.goods_id     AS goodsId,
+            g.name          AS goodsName,
+            gb.supplier_id  AS supplierId,
+            s.name          AS supplierName,
+            gb.storage_id   AS storageId,
+            st.name         AS storageName,
+            gb.batch_no     AS batchNum,
+            gb.purchase_price AS purchasePrice,
+            gb.initial_count  AS initialCount,
+            gb.current_count  AS currentCount,
+            gb.create_time    AS createTime
+        FROM goods_batch gb
+        INNER JOIN goods     g  ON gb.goods_id   = g.id
+        LEFT  JOIN supplier  s  ON gb.supplier_id = s.id
+        LEFT  JOIN storage   st ON gb.storage_id  = st.id
+        <where>
+            <if test="goodsName != null and goodsName != ''">
+                AND g.name LIKE CONCAT('%', #{goodsName}, '%')
+            </if>
+            <if test="supplierId != null">
+                AND gb.supplier_id = #{supplierId}
+            </if>
+            <if test="storageId != null">
+                AND gb.storage_id = #{storageId}
+            </if>
+            <if test="batchNo != null and batchNo != ''">
+                AND gb.batch_no LIKE CONCAT('%', #{batchNo}, '%')
+            </if>
+        </where>
+        ORDER BY gb.create_time DESC
+    </select>
+
+    <!-- 查询指定仓库中有批次库存的商品（用于调拨选择商品） -->
+    <select id="selectGoodsByStorageId" resultType="java.util.HashMap">
+        SELECT
+            g.id,
+            g.name,
+            g.barcode,
+            g.retail_price   AS retailPrice,
+            g.purchase_price AS purchasePrice,
+            g.unit,
+            g.specs,
+            g.count,
+            g.reserved_count AS reservedCount,
+            g.supplier_id    AS supplierId,
+            SUM(gb.current_count) AS batchCount
+        FROM goods g
+        INNER JOIN goods_batch gb ON g.id = gb.goods_id
+        WHERE gb.storage_id = #{storageId}
+          AND gb.current_count > 0
+        GROUP BY g.id, g.name, g.barcode, g.retail_price, g.purchase_price,
+                 g.unit, g.specs, g.count, g.reserved_count, g.supplier_id
+        ORDER BY g.name
     </select>
 
 </mapper>

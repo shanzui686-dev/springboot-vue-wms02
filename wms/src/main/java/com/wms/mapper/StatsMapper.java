@@ -1,11 +1,6 @@
 package com.wms.mapper;
 
-import com.wms.entity.CategoryRatioVO;
-import com.wms.entity.Goods;
-import com.wms.entity.GrossProfitVO;
-import com.wms.entity.RestockSuggestionVO;
-import com.wms.entity.SalesTrendVO;
-import com.wms.entity.TurnoverRateVO;
+import com.wms.entity.*;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -21,6 +16,12 @@ import java.util.List;
  */
 @Mapper
 public interface StatsMapper {
+
+    /**
+     * 获取今日销售统计汇总
+     * @return 今日销售统计
+     */
+    TodaySummaryVO getTodaySummary();
 
     /**
      * 销售趋势统计（按天）
@@ -68,4 +69,9 @@ public interface StatsMapper {
      * @return 库存低于预警值的商品列表
      */
     List<Goods> getWarningList();
+
+    /**
+     * 按商品销售统计（近30天）
+     */
+    List<ProductSalesVO> getProductSales();
 }

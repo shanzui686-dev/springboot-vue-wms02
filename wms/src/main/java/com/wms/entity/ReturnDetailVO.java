@@ -34,6 +34,12 @@ public class ReturnDetailVO implements Serializable {
     @Schema(description = "小计金额")
     private BigDecimal subtotal;
 
+    @Schema(description = "换货目标商品ID")
+    private Integer exchangeGoodsId;
+
+    @Schema(description = "换货目标商品名称")
+    private String exchangeGoodsName;
+
     public Integer getId() {
         return id;
     }
@@ -89,6 +95,12 @@ public class ReturnDetailVO implements Serializable {
     public void setSubtotal(BigDecimal subtotal) {
         this.subtotal = subtotal;
     }
+
+    public Integer getExchangeGoodsId() { return exchangeGoodsId; }
+    public void setExchangeGoodsId(Integer exchangeGoodsId) { this.exchangeGoodsId = exchangeGoodsId; }
+
+    public String getExchangeGoodsName() { return exchangeGoodsName; }
+    public void setExchangeGoodsName(String exchangeGoodsName) { this.exchangeGoodsName = exchangeGoodsName; }
 
     @Override
     public String toString() {
