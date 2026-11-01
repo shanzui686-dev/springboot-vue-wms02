@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.wms.entity.SalesDTO;
 import com.wms.entity.SalesDetailVO;
 import com.wms.entity.SalesVO;
+import com.wms.entity.SalesSummaryVO;
 
 import java.util.List;
 
@@ -43,6 +44,16 @@ public interface ISalesService extends IService<Sales> {
      * @return 销售明细列表
      */
     List<SalesDetailVO> getDetails(Integer salesId);
+
+    /**
+     * 查询销售汇总（销售笔数 / 应收总额 / 实收总额）
+     * @param orderNum 订单流水号（模糊匹配）
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @param userId 收银员ID
+     * @return 销售汇总
+     */
+    SalesSummaryVO summary(String orderNum, String startDate, String endDate, Integer userId);
 
     /**
      * 收银台直接退款（回滚库存）
