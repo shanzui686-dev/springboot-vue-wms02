@@ -1,5 +1,8 @@
 <template>
-  <div style="padding: 20px;">
+  <!-- 收银员：首页直接是当日销售记录页 -->
+  <CashierTodaySales v-if="user.roleId === 2" />
+  <!-- 其他角色：欢迎页 + 个人中心 -->
+  <div v-else style="padding: 20px;">
     <h1 style="text-align: center; color: #409EFF;">{{'欢迎你！' + user.name }}</h1>
     <el-descriptions :title="'个人中心'" :column="2" size="large" border>
       <el-descriptions-item>
@@ -36,7 +39,7 @@
           <i class="el-icon-setting"></i>
           角色
         </template>
-        <el-tag v-if="user.roleId === 0" type="danger" size="small">系统管理员</el-tag>
+        <el-tag v-if="user.roleId === 0" type="danger" size="small">店长</el-tag>
         <el-tag v-else-if="user.roleId === 1" type="primary" size="small">库存管理员</el-tag>
         <el-tag v-else type="success" size="small">收银员</el-tag>
       </el-descriptions-item>
@@ -51,18 +54,15 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import DateUtils from './DateUtils.vue'
+import CashierTodaySales from './record/CashierTodaySales.vue'
 
 const router = useRouter()
-const user = ref({})
+
+// 优先从localStorage获取用户信息（7天免登录），其次从sessionStorage获取（普通登录）
+// setup 同步读取，保证收银员首屏直接渲染销售记录页、不闪现欢迎页
+const user = ref(JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}'))
 
 onMounted(() => {
-  // 优先从localStorage获取用户信息（7天免登录），其次从sessionStorage获取（普通登录）
-  let userData = localStorage.getItem('user')
-  if (!userData) {
-    userData = sessionStorage.getItem('user')
-  }
-  user.value = JSON.parse(userData || '{}')
-  
   // 如果没有用户信息，说明已退出登录，跳转到登录页
   if (!user.value.id) {
     router.replace('/')
