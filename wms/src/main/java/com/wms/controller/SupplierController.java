@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.common.Log;
 import com.wms.common.QueryPageParam;
+import com.wms.common.RequireRole;
 import com.wms.common.Result;
 import com.wms.entity.Supplier;
 import com.wms.service.ISupplierService;
@@ -27,6 +28,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/supplier")
+@RequireRole({0, 1}) // 店长+库存管理员可管理供应商
 public class SupplierController {
     private static final Logger log = LoggerFactory.getLogger(SupplierController.class);
     
@@ -79,6 +81,7 @@ public class SupplierController {
 
     // 查询所有
     @GetMapping("/list")
+    @RequireRole({0, 1, 2}) // 收银员只读（商品页筛选下拉用）
     public Result list(){
         List<Supplier> list = supplierService.list();
         return Result.suc(list);
