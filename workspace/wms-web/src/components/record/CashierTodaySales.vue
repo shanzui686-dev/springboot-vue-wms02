@@ -2,7 +2,7 @@
   <div class="cashier-today-sales">
     <!-- 顶部统计卡片（仿店长统计页风格） -->
     <el-row :gutter="20" class="stats-cards">
-      <el-col :span="8">
+      <el-col :span="6">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
             <div class="stat-icon order-icon">
@@ -18,7 +18,7 @@
         </el-card>
       </el-col>
 
-      <el-col :span="8">
+      <el-col :span="6">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
             <div class="stat-icon sales-icon">
@@ -34,7 +34,7 @@
         </el-card>
       </el-col>
 
-      <el-col :span="8">
+      <el-col :span="6">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
             <div class="stat-icon net-icon">
@@ -45,6 +45,23 @@
               <div class="stat-value">
                 <count-to :end-val="summary.realAmount" :duration="2000" prefix="¥" />
               </div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+
+      <el-col :span="6">
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-content">
+            <div class="stat-icon return-icon">
+              <el-icon :size="40"><RefreshLeft /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">{{ searchDate ? '今日退换货笔数' : '退换货笔数' }}</div>
+              <div class="stat-value">
+                <count-to :end-val="summary.returnCount" :duration="2000" :decimals="0" />
+              </div>
+              <div class="stat-sub">已退货 {{ summary.returnDoneCount }} · 待退款 {{ summary.returnPendingCount }}</div>
             </div>
           </div>
         </el-card>
@@ -170,7 +187,7 @@
 
 <script setup>
 import { ref, onMounted, getCurrentInstance } from 'vue'
-import { Search, Money, Coin, Tickets } from '@element-plus/icons-vue'
+import { Search, Money, Coin, Tickets, RefreshLeft } from '@element-plus/icons-vue'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
@@ -251,7 +268,7 @@ const pageSize = ref(10)
 const total = ref(0)
 
 // 汇总数据
-const summary = ref({ count: 0, totalAmount: 0, realAmount: 0 })
+const summary = ref({ count: 0, totalAmount: 0, realAmount: 0, returnCount: 0, returnDoneCount: 0, returnPendingCount: 0 })
 
 // 明细弹窗
 const detailDialogVisible = ref(false)
@@ -416,6 +433,10 @@ onMounted(() => {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
 }
 
+.return-icon {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
 .stat-info {
   flex: 1;
 }
@@ -430,6 +451,12 @@ onMounted(() => {
   font-size: 28px;
   font-weight: bold;
   color: #303133;
+}
+
+.stat-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #909399;
 }
 
 /* 表格区域样式 */

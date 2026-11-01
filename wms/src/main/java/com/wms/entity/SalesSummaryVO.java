@@ -16,6 +16,15 @@ public class SalesSummaryVO {
     /** 实收总额 */
     private BigDecimal realAmount;
 
+    /** 退换货笔数（有退换货记录的销售单数） */
+    private Long returnCount;
+
+    /** 已退货笔数 */
+    private Long returnDoneCount;
+
+    /** 待退款笔数 */
+    private Long returnPendingCount;
+
     public Long getCount() {
         return count;
     }
@@ -38,5 +47,29 @@ public class SalesSummaryVO {
 
     public void setRealAmount(BigDecimal realAmount) {
         this.realAmount = realAmount;
+    }
+
+    public Long getReturnCount() {
+        return returnCount;
+    }
+
+    public void setReturnCount(Long returnCount) {
+        this.returnCount = returnCount;
+    }
+
+    public Long getReturnDoneCount() {
+        return returnDoneCount;
+    }
+
+    public void setReturnDoneCount(Long returnDoneCount) {
+        this.returnDoneCount = returnDoneCount;
+    }
+
+    public Long getReturnPendingCount() {
+        return returnPendingCount;
+    }
+
+    public void setReturnPendingCount(Long returnPendingCount) {
+        this.returnPendingCount = returnPendingCount;
     }
 }

@@ -22,6 +22,9 @@
         <result column="cnt" property="count" />
         <result column="total_amount" property="totalAmount" />
         <result column="real_amount" property="realAmount" />
+        <result column="return_count" property="returnCount" />
+        <result column="return_done_count" property="returnDoneCount" />
+        <result column="return_pending_count" property="returnPendingCount" />
     </resultMap>
 
     <!-- 分页查询销售单列表（连表查询收银员姓名和退货状态） -->
@@ -68,7 +71,10 @@
         SELECT
             COUNT(*) AS cnt,
             IFNULL(SUM(s.total_amount), 0) AS total_amount,
-            IFNULL(SUM(s.real_amount), 0) AS real_amount
+            IFNULL(SUM(s.real_amount), 0) AS real_amount,
+            IFNULL(SUM(EXISTS(SELECT 1 FROM sales_return sr WHERE sr.sales_id = s.id)), 0) AS return_count,
+            IFNULL(SUM(EXISTS(SELECT 1 FROM sales_return sr WHERE sr.sales_id = s.id AND sr.status = 1)), 0) AS return_done_count,
+            IFNULL(SUM(EXISTS(SELECT 1 FROM sales_return sr WHERE sr.sales_id = s.id AND sr.status = 0)), 0) AS return_pending_count
         FROM sales s
         <where>
             <if test="orderNum != null and orderNum != ''">
