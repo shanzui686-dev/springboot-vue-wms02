@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.entity.Sales;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.wms.entity.SalesVO;
+import com.wms.entity.SalesSummaryVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -32,4 +33,17 @@ public interface SalesMapper extends BaseMapper<Sales> {
                                     @Param("startDate") String startDate,
                                     @Param("endDate") String endDate,
                                     @Param("userId") Integer userId);
+
+    /**
+     * 查询销售汇总（销售笔数 / 应收总额 / 实收总额，与 selectSalesPage 同口径）
+     * @param orderNum 订单流水号（模糊匹配）
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @param userId 收银员ID
+     * @return 销售汇总
+     */
+    SalesSummaryVO selectSalesSummary(@Param("orderNum") String orderNum,
+                                      @Param("startDate") String startDate,
+                                      @Param("endDate") String endDate,
+                                      @Param("userId") Integer userId);
 }

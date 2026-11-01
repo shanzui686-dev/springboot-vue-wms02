@@ -17,6 +17,13 @@
         <result column="status" property="status" />
     </resultMap>
 
+    <!-- 销售汇总结果映射 -->
+    <resultMap id="SalesSummaryVOResultMap" type="com.wms.entity.SalesSummaryVO">
+        <result column="cnt" property="count" />
+        <result column="total_amount" property="totalAmount" />
+        <result column="real_amount" property="realAmount" />
+    </resultMap>
+
     <!-- 分页查询销售单列表（连表查询收银员姓名和退货状态） -->
     <select id="selectSalesPage" resultMap="SalesVOResultMap">
         SELECT
@@ -54,6 +61,30 @@
             </if>
         </where>
         ORDER BY s.create_time DESC
+    </select>
+
+    <!-- 销售汇总（口径与 selectSalesPage 一致：模糊单号含SO补零兜底、时间范围、收银员，含已退款单） -->
+    <select id="selectSalesSummary" resultMap="SalesSummaryVOResultMap">
+        SELECT
+            COUNT(*) AS cnt,
+            IFNULL(SUM(s.total_amount), 0) AS total_amount,
+            IFNULL(SUM(s.real_amount), 0) AS real_amount
+        FROM sales s
+        <where>
+            <if test="orderNum != null and orderNum != ''">
+                AND (s.order_num LIKE CONCAT('%', #{orderNum}, '%')
+                     OR CONCAT('SO', LPAD(s.id, 8, '0')) LIKE CONCAT('%', #{orderNum}, '%'))
+            </if>
+            <if test="startDate != null and startDate != ''">
+                AND s.create_time &gt;= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND s.create_time &lt;= #{endDate}
+            </if>
+            <if test="userId != null">
+                AND s.user_id = #{userId}
+            </if>
+        </where>
     </select>
 
 </mapper>
