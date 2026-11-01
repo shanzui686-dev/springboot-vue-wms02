@@ -155,7 +155,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, getCurrentInstance, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, getCurrentInstance, nextTick } from 'vue'
 import { Money, Coin, Tickets, RefreshLeft, Warning, CircleCheck } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import axios from 'axios'
@@ -361,14 +361,21 @@ const loadReturnGoodsSales = async () => {
       ElMessage.error(result.msg || '退换货商品数据加载失败')
     }
     await nextTick()
-    returnQtyChartInstance = initPieChart(returnQtyChartInstance, returnQtyChartRef, returnGoodsSales.value, 'totalQuantity')
-    returnAmountChartInstance = initPieChart(returnAmountChartInstance, returnAmountChartRef, returnGoodsSales.value, 'totalAmount')
-    window.addEventListener('resize', () => {
-      amountChartInstance?.resize()
-      quantityChartInstance?.resize()
-      returnQtyChartInstance?.resize()
-      returnAmountChartInstance?.resize()
+    // 数量占比：退货/换货分开显示（同商品两段：xxx（退货）/ xxx（换货））
+    const qtyData = returnGoodsSales.value.map(item => ({
+      ...item,
+      goodsName: `${item.goodsName}（${item.type === 2 ? '换货' : '退货'}）`
+    }))
+    returnQtyChartInstance = initPieChart(returnQtyChartInstance, returnQtyChartRef, qtyData, 'totalQuantity')
+    // 退款金额占比：按商品合并（不区分类型）
+    const merged = {}
+    returnGoodsSales.value.forEach(item => {
+      if (!merged[item.goodsName]) {
+        merged[item.goodsName] = { ...item, totalAmount: 0 }
+      }
+      merged[item.goodsName].totalAmount += Number(item.totalAmount) || 0
     })
+    returnAmountChartInstance = initPieChart(returnAmountChartInstance, returnAmountChartRef, Object.values(merged), 'totalAmount')
   } catch (error) {
     ElMessage.error('退换货商品数据加载失败')
   }
@@ -382,8 +389,30 @@ const loadAllData = () => {
   loadReturnGoodsSales()
 }
 
+// 图表随窗口缩放自适应
+const handleResize = () => {
+  amountChartInstance?.resize()
+  quantityChartInstance?.resize()
+  returnQtyChartInstance?.resize()
+  returnAmountChartInstance?.resize()
+}
+
+// 实时更新轮询（5秒）
+let pollTimer = null
+const POLL_INTERVAL = 5000
+
 onMounted(() => {
   loadAllData()
+  window.addEventListener('resize', handleResize)
+  pollTimer = setInterval(loadAllData, POLL_INTERVAL)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
 })
 </script>
 

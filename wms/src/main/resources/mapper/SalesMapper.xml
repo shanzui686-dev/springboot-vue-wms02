@@ -132,11 +132,12 @@
         ORDER BY totalAmount DESC
     </select>
 
-    <!-- 退换货商品汇总（饼图数据：退换货数量占比、退款金额占比） -->
+    <!-- 退换货商品汇总（饼图数据：退换货数量占比、退款金额占比；按退货/换货类型区分） -->
     <select id="selectReturnGoodsSales" resultType="com.wms.entity.ProductSalesVO">
         SELECT
             g.id AS goodsId,
             g.name AS goodsName,
+            sr.type AS type,
             IFNULL(SUM(srd.return_count), 0) AS totalQuantity,
             IFNULL(SUM(srd.subtotal), 0) AS totalAmount
         FROM sales_return_detail srd
@@ -153,7 +154,7 @@
                 AND sr.user_id = #{userId}
             </if>
         </where>
-        GROUP BY g.id, g.name
+        GROUP BY g.id, g.name, sr.type
         ORDER BY totalAmount DESC
     </select>
 
