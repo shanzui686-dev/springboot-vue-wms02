@@ -84,6 +84,22 @@ public class SalesController {
     }
 
     /**
+     * 查询销售汇总（销售笔数 / 应收总额 / 实收总额）
+     * @param orderNum 订单流水号（模糊匹配）
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @param userId 收银员ID
+     * @return 汇总结果
+     */
+    @GetMapping("/summary")
+    public Result summary(@RequestParam(required = false) String orderNum,
+                          @RequestParam(required = false) String startDate,
+                          @RequestParam(required = false) String endDate,
+                          @RequestParam(required = false) Integer userId) {
+        return Result.suc(salesService.summary(orderNum, startDate, endDate, userId));
+    }
+
+    /**
      * 收银台直接退款接口
      * @param orderNum 销售单流水号
      * @return 退款结果
