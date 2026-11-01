@@ -1,104 +1,134 @@
 <template>
   <div class="cashier-today-sales">
-    <!-- 搜索区 -->
-    <el-card class="search-card" shadow="never">
-      <el-form :inline="true" class="search-form">
-        <el-form-item label="日期">
-          <el-date-picker
-            v-model="searchDate"
-            type="date"
-            placeholder="选择日期"
-            value-format="YYYY-MM-DD"
-            clearable
-            style="width: 160px"
-          />
-        </el-form-item>
-        <el-form-item label="流水单号">
-          <el-input
-            v-model="searchOrderNum"
-            placeholder="请输入流水单号"
-            clearable
-            style="width: 200px"
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" :icon="Search" @click="handleSearch">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+    <!-- 顶部统计卡片（仿店长统计页风格） -->
+    <el-row :gutter="20" class="stats-cards">
+      <el-col :span="8">
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-content">
+            <div class="stat-icon order-icon">
+              <el-icon :size="40"><Tickets /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">{{ searchDate ? '今日销售笔数' : '销售笔数' }}</div>
+              <div class="stat-value">
+                <count-to :end-val="summary.count" :duration="2000" :decimals="0" />
+              </div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
 
-    <!-- 汇总卡片 -->
-    <el-row :gutter="20" class="summary-row">
       <el-col :span="8">
-        <el-card shadow="never" class="summary-card">
-          <div class="summary-label">销售笔数</div>
-          <div class="summary-value">{{ summary.count }}</div>
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-content">
+            <div class="stat-icon sales-icon">
+              <el-icon :size="40"><Money /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">{{ searchDate ? '今日应收总额' : '应收总额' }}</div>
+              <div class="stat-value">
+                <count-to :end-val="summary.totalAmount" :duration="2000" prefix="¥" />
+              </div>
+            </div>
+          </div>
         </el-card>
       </el-col>
+
       <el-col :span="8">
-        <el-card shadow="never" class="summary-card">
-          <div class="summary-label">应收总额</div>
-          <div class="summary-value">¥{{ formatAmount(summary.totalAmount) }}</div>
-        </el-card>
-      </el-col>
-      <el-col :span="8">
-        <el-card shadow="never" class="summary-card">
-          <div class="summary-label">实收总额</div>
-          <div class="summary-value">¥{{ formatAmount(summary.realAmount) }}</div>
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-content">
+            <div class="stat-icon net-icon">
+              <el-icon :size="40"><Coin /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">{{ searchDate ? '今日实收总额' : '实收总额' }}</div>
+              <div class="stat-value">
+                <count-to :end-val="summary.realAmount" :duration="2000" prefix="¥" />
+              </div>
+            </div>
+          </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <!-- 记录表格 -->
-    <el-card class="table-card" shadow="never">
-      <el-table :data="tableData" border stripe v-loading="loading" style="width: 100%">
-        <el-table-column prop="orderNum" label="流水单号" width="180" />
-        <el-table-column prop="totalAmount" label="应收总额" width="120">
-          <template #default="{ row }">¥{{ formatAmount(row.totalAmount) }}</template>
-        </el-table-column>
-        <el-table-column prop="realAmount" label="实收金额" width="120">
-          <template #default="{ row }">¥{{ formatAmount(row.realAmount) }}</template>
-        </el-table-column>
-        <el-table-column prop="changeAmount" label="找零" width="100">
-          <template #default="{ row }">¥{{ formatAmount(row.changeAmount) }}</template>
-        </el-table-column>
-        <el-table-column label="支付方式" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag :type="row.paymentMethod === 1 ? 'success' : 'primary'">
-              {{ row.paymentMethod === 1 ? '现金' : '扫码' }}
-            </el-tag>
+    <!-- 销售记录 -->
+    <el-row :gutter="20" class="tables-section">
+      <el-col :span="24">
+        <el-card class="table-card" shadow="hover">
+          <template #header>
+            <div class="card-header">
+              <span>{{ searchDate ? '今日销售记录' : '全部销售记录' }}</span>
+              <!-- 查询区 -->
+              <div class="header-search">
+                <el-date-picker
+                  v-model="searchDate"
+                  type="date"
+                  placeholder="选择日期"
+                  value-format="YYYY-MM-DD"
+                  clearable
+                  style="width: 150px"
+                />
+                <el-input
+                  v-model="searchOrderNum"
+                  placeholder="流水单号"
+                  clearable
+                  style="width: 170px"
+                />
+                <el-button type="primary" :icon="Search" @click="handleSearch">查询</el-button>
+                <el-button @click="handleReset">重置</el-button>
+              </div>
+            </div>
           </template>
-        </el-table-column>
-        <el-table-column label="销售状态" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'danger' : 'success'">
-              {{ row.status === 1 ? '已退款' : '正常' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createTime" label="结账时间" width="180">
-          <template #default="{ row }">{{ formatDateTime(row.createTime) }}</template>
-        </el-table-column>
-        <el-table-column label="操作" fixed="right" width="120">
-          <template #default="{ row }">
-            <el-button type="primary" size="small" @click="handleViewDetails(row)">查看明细</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
 
-      <!-- 分页 -->
-      <el-pagination
-        v-model:current-page="pageNum"
-        v-model:page-size="pageSize"
-        :page-sizes="[10, 20, 50, 100]"
-        :total="total"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-        class="pagination"
-      />
-    </el-card>
+          <el-table :data="tableData" border stripe v-loading="loading" style="width: 100%">
+            <el-table-column prop="orderNum" label="流水单号" width="180" />
+            <el-table-column prop="totalAmount" label="应收总额" width="120">
+              <template #default="{ row }">¥{{ formatAmount(row.totalAmount) }}</template>
+            </el-table-column>
+            <el-table-column prop="realAmount" label="实收金额" width="120">
+              <template #default="{ row }">¥{{ formatAmount(row.realAmount) }}</template>
+            </el-table-column>
+            <el-table-column prop="changeAmount" label="找零" width="100">
+              <template #default="{ row }">¥{{ formatAmount(row.changeAmount) }}</template>
+            </el-table-column>
+            <el-table-column label="支付方式" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag :type="row.paymentMethod === 1 ? 'success' : 'primary'">
+                  {{ row.paymentMethod === 1 ? '现金' : '扫码' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="销售状态" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag :type="row.status === 1 ? 'danger' : 'success'">
+                  {{ row.status === 1 ? '已退款' : '正常' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="createTime" label="结账时间" width="180">
+              <template #default="{ row }">{{ formatDateTime(row.createTime) }}</template>
+            </el-table-column>
+            <el-table-column label="操作" fixed="right" width="120">
+              <template #default="{ row }">
+                <el-button type="primary" size="small" @click="handleViewDetails(row)">查看明细</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <!-- 分页 -->
+          <el-pagination
+            v-model:current-page="pageNum"
+            v-model:page-size="pageSize"
+            :page-sizes="[10, 20, 50, 100]"
+            :total="total"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            class="pagination"
+          />
+        </el-card>
+      </el-col>
+    </el-row>
 
     <!-- 销售明细弹窗 -->
     <el-dialog
@@ -126,12 +156,65 @@
 
 <script setup>
 import { ref, onMounted, getCurrentInstance } from 'vue'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Money, Coin, Tickets } from '@element-plus/icons-vue'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
 const { proxy } = getCurrentInstance()
 const httpUrl = proxy.$httpUrl
+
+// 数字动画组件（与店长统计页 Dashboard.vue 同款）
+const CountTo = {
+  props: {
+    endVal: { type: Number, default: 0 },
+    duration: { type: Number, default: 2000 },
+    prefix: { type: String, default: '' },
+    decimals: { type: Number, default: 2 }
+  },
+  data() {
+    return {
+      displayValue: 0
+    }
+  },
+  mounted() {
+    this.animateNumber()
+  },
+  watch: {
+    endVal() {
+      this.displayValue = 0
+      this.animateNumber()
+    }
+  },
+  methods: {
+    animateNumber() {
+      const startTime = performance.now()
+      const startValue = 0
+      const endValue = this.endVal
+      const duration = this.duration
+
+      const step = (currentTime) => {
+        const elapsed = currentTime - startTime
+        const progress = Math.min(elapsed / duration, 1)
+
+        // 使用缓动函数
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+        this.displayValue = startValue + (endValue - startValue) * easeOutQuart
+
+        if (progress < 1) {
+          requestAnimationFrame(step)
+        } else {
+          this.displayValue = endValue
+        }
+      }
+
+      requestAnimationFrame(step)
+    }
+  },
+  render() {
+    const value = this.displayValue.toFixed(this.decimals)
+    return `${this.prefix}${value}`
+  }
+}
 
 // 用户信息：7天免登录存 localStorage，普通登录存 sessionStorage
 const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}')
@@ -271,27 +354,104 @@ onMounted(() => {
 <style scoped>
 .cashier-today-sales {
   padding: 20px;
+  background-color: #f0f2f5;
+  min-height: calc(100vh - 60px);
 }
-.search-card {
-  margin-bottom: 16px;
+
+/* 统计卡片样式（与店长统计页一致） */
+.stats-cards {
+  margin-bottom: 20px;
 }
-.summary-row {
-  margin-bottom: 16px;
+
+.stat-card {
+  border-radius: 8px;
+  transition: all 0.3s;
 }
-.summary-card {
-  text-align: center;
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
-.summary-label {
+
+.stat-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.stat-icon {
+  width: 70px;
+  height: 70px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.sales-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.net-icon {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  color: #409EFF;
+}
+
+.order-icon {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-info {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 14px;
   color: #909399;
-  font-size: 13px;
   margin-bottom: 8px;
 }
-.summary-value {
+
+.stat-value {
+  font-size: 28px;
+  font-weight: bold;
   color: #303133;
-  font-size: 22px;
-  font-weight: 600;
 }
+
+/* 表格区域样式 */
+.tables-section {
+  margin-bottom: 20px;
+}
+
+.table-card {
+  border-radius: 8px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  font-size: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.header-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: normal;
+}
+
 .pagination {
   margin-top: 12px;
+}
+
+/* 响应式调整 */
+@media (max-width: 1200px) {
+  .stat-value {
+    font-size: 24px;
+  }
 }
 </style>
