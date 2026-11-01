@@ -201,6 +201,11 @@ public class SalesServiceImpl extends ServiceImpl<SalesMapper, Sales> implements
         return salesMapper.selectGoodsSales(startDate, endDate, userId);
     }
 
+    @Override
+    public List<ProductSalesVO> returnGoodsSales(String startDate, String endDate, Integer userId) {
+        return salesMapper.selectReturnGoodsSales(startDate, endDate, userId);
+    }
+
     /**
      * 收银台直接退款 — 回滚批次库存 + 更新状态
      */

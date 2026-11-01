@@ -132,4 +132,29 @@
         ORDER BY totalAmount DESC
     </select>
 
+    <!-- 退换货商品汇总（饼图数据：退换货数量占比、退款金额占比） -->
+    <select id="selectReturnGoodsSales" resultType="com.wms.entity.ProductSalesVO">
+        SELECT
+            g.id AS goodsId,
+            g.name AS goodsName,
+            IFNULL(SUM(srd.return_count), 0) AS totalQuantity,
+            IFNULL(SUM(srd.subtotal), 0) AS totalAmount
+        FROM sales_return_detail srd
+        INNER JOIN sales_return sr ON srd.return_id = sr.id
+        INNER JOIN goods g ON srd.goods_id = g.id
+        <where>
+            <if test="startDate != null and startDate != ''">
+                AND sr.create_time &gt;= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND sr.create_time &lt;= #{endDate}
+            </if>
+            <if test="userId != null">
+                AND sr.user_id = #{userId}
+            </if>
+        </where>
+        GROUP BY g.id, g.name
+        ORDER BY totalAmount DESC
+    </select>
+
 </mapper>

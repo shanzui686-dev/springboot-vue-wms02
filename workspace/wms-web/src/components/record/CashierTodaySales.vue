@@ -126,6 +126,31 @@
         </el-card>
       </el-col>
     </el-row>
+
+    <!-- 饼图区：今日退换货情况 -->
+    <el-row :gutter="20" class="charts-section">
+      <el-col :span="12">
+        <el-card class="chart-card" shadow="hover">
+          <template #header>
+            <div class="card-header">
+              <span>今日退换货数量占比</span>
+            </div>
+          </template>
+          <div ref="returnQtyChartRef" class="chart-container"></div>
+        </el-card>
+      </el-col>
+
+      <el-col :span="12">
+        <el-card class="chart-card" shadow="hover">
+          <template #header>
+            <div class="card-header">
+              <span>今日退款金额占比</span>
+            </div>
+          </template>
+          <div ref="returnAmountChartRef" class="chart-container"></div>
+        </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
@@ -205,12 +230,17 @@ const getToday = () => {
 const summary = ref({ count: 0, totalAmount: 0, realAmount: 0 })
 const returnSummary = ref({ returnCount: 0, returnDueAmount: 0, returnPaidAmount: 0 })
 const goodsSales = ref([])
+const returnGoodsSales = ref([])
 
 // 图表引用
 const amountChartRef = ref(null)
 const quantityChartRef = ref(null)
+const returnQtyChartRef = ref(null)
+const returnAmountChartRef = ref(null)
 let amountChartInstance = null
 let quantityChartInstance = null
+let returnQtyChartInstance = null
+let returnAmountChartInstance = null
 
 // 查询参数（今日 + 本人）
 const buildParams = () => {
@@ -315,12 +345,32 @@ const loadGoodsSales = async () => {
     await nextTick()
     amountChartInstance = initPieChart(amountChartInstance, amountChartRef, goodsSales.value, 'totalAmount')
     quantityChartInstance = initPieChart(quantityChartInstance, quantityChartRef, goodsSales.value, 'totalQuantity')
+  } catch (error) {
+    ElMessage.error('商品销售数据加载失败')
+  }
+}
+
+// 加载退换货商品汇总并渲染饼图
+const loadReturnGoodsSales = async () => {
+  try {
+    const res = await axios.get(httpUrl + '/sales/returnGoodsSales', { params: buildParams() })
+    const result = res.data
+    if (result.code === 200) {
+      returnGoodsSales.value = result.data || []
+    } else {
+      ElMessage.error(result.msg || '退换货商品数据加载失败')
+    }
+    await nextTick()
+    returnQtyChartInstance = initPieChart(returnQtyChartInstance, returnQtyChartRef, returnGoodsSales.value, 'totalQuantity')
+    returnAmountChartInstance = initPieChart(returnAmountChartInstance, returnAmountChartRef, returnGoodsSales.value, 'totalAmount')
     window.addEventListener('resize', () => {
       amountChartInstance?.resize()
       quantityChartInstance?.resize()
+      returnQtyChartInstance?.resize()
+      returnAmountChartInstance?.resize()
     })
   } catch (error) {
-    ElMessage.error('商品销售数据加载失败')
+    ElMessage.error('退换货商品数据加载失败')
   }
 }
 
@@ -329,6 +379,7 @@ const loadAllData = () => {
   loadSummary()
   loadReturnSummary()
   loadGoodsSales()
+  loadReturnGoodsSales()
 }
 
 onMounted(() => {

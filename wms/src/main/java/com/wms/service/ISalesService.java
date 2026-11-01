@@ -75,6 +75,15 @@ public interface ISalesService extends IService<Sales> {
     List<ProductSalesVO> goodsSales(String startDate, String endDate, Integer userId);
 
     /**
+     * 查询退换货商品汇总（饼图数据：退换货数量占比 / 退款金额占比）
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @param userId 收银员ID
+     * @return 退换货商品汇总列表
+     */
+    List<ProductSalesVO> returnGoodsSales(String startDate, String endDate, Integer userId);
+
+    /**
      * 收银台直接退款（回滚库存）
      * @param orderNum 销售单流水号
      * @return 是否成功

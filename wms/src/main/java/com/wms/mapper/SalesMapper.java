@@ -71,4 +71,15 @@ public interface SalesMapper extends BaseMapper<Sales> {
     List<ProductSalesVO> selectGoodsSales(@Param("startDate") String startDate,
                                           @Param("endDate") String endDate,
                                           @Param("userId") Integer userId);
+
+    /**
+     * 查询退换货商品汇总（饼图数据：退换货数量占比 / 退款金额占比）
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @param userId 收银员ID
+     * @return 退换货商品汇总列表
+     */
+    List<ProductSalesVO> selectReturnGoodsSales(@Param("startDate") String startDate,
+                                                @Param("endDate") String endDate,
+                                                @Param("userId") Integer userId);
 }
