@@ -108,6 +108,13 @@
             <el-table-column prop="createTime" label="结账时间" width="180">
               <template #default="{ row }">{{ formatDateTime(row.createTime) }}</template>
             </el-table-column>
+            <el-table-column label="退货状态" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag v-if="row.returnStatus === 2" type="success">已退货</el-tag>
+                <el-tag v-else-if="row.returnStatus === 1" type="warning">待退款</el-tag>
+                <el-tag v-else type="info">未退货</el-tag>
+              </template>
+            </el-table-column>
             <el-table-column label="操作" fixed="right" width="120">
               <template #default="{ row }">
                 <el-button type="primary" size="small" @click="handleViewDetails(row)">查看明细</el-button>
@@ -145,6 +152,13 @@
         <el-table-column prop="count" label="数量" width="100" align="center" />
         <el-table-column prop="subtotal" label="小计" width="120">
           <template #default="{ row }">¥{{ formatAmount(row.subtotal) }}</template>
+        </el-table-column>
+        <el-table-column label="明细状态" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 1 ? 'danger' : row.status === 2 ? 'warning' : 'success'">
+              {{ row.status === 1 ? '退货' : row.status === 2 ? '换货' : '正常' }}
+            </el-tag>
+          </template>
         </el-table-column>
       </el-table>
       <template #footer>
