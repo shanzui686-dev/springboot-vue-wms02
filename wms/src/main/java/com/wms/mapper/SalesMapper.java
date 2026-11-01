@@ -4,8 +4,11 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.entity.Sales;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.wms.entity.ProductSalesVO;
 import com.wms.entity.SalesVO;
 import com.wms.entity.SalesSummaryVO;
+
+import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -46,4 +49,26 @@ public interface SalesMapper extends BaseMapper<Sales> {
                                       @Param("startDate") String startDate,
                                       @Param("endDate") String endDate,
                                       @Param("userId") Integer userId);
+
+    /**
+     * 查询退换货汇总（退货笔数 / 应退款金额 / 实退款金额）
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @param userId 收银员ID
+     * @return 退换货汇总
+     */
+    SalesSummaryVO selectReturnSummary(@Param("startDate") String startDate,
+                                       @Param("endDate") String endDate,
+                                       @Param("userId") Integer userId);
+
+    /**
+     * 查询商品销售汇总（饼图数据：销售了哪些商品）
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @param userId 收银员ID
+     * @return 商品销售汇总列表
+     */
+    List<ProductSalesVO> selectGoodsSales(@Param("startDate") String startDate,
+                                          @Param("endDate") String endDate,
+                                          @Param("userId") Integer userId);
 }

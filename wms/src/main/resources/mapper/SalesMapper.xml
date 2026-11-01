@@ -22,9 +22,6 @@
         <result column="cnt" property="count" />
         <result column="total_amount" property="totalAmount" />
         <result column="real_amount" property="realAmount" />
-        <result column="return_count" property="returnCount" />
-        <result column="return_done_count" property="returnDoneCount" />
-        <result column="return_pending_count" property="returnPendingCount" />
     </resultMap>
 
     <!-- 分页查询销售单列表（连表查询收银员姓名和退货状态） -->
@@ -71,10 +68,7 @@
         SELECT
             COUNT(*) AS cnt,
             IFNULL(SUM(s.total_amount), 0) AS total_amount,
-            IFNULL(SUM(s.real_amount), 0) AS real_amount,
-            IFNULL(SUM(EXISTS(SELECT 1 FROM sales_return sr WHERE sr.sales_id = s.id)), 0) AS return_count,
-            IFNULL(SUM(EXISTS(SELECT 1 FROM sales_return sr WHERE sr.sales_id = s.id AND sr.status = 1)), 0) AS return_done_count,
-            IFNULL(SUM(EXISTS(SELECT 1 FROM sales_return sr WHERE sr.sales_id = s.id AND sr.status = 0)), 0) AS return_pending_count
+            IFNULL(SUM(s.real_amount), 0) AS real_amount
         FROM sales s
         <where>
             <if test="orderNum != null and orderNum != ''">
@@ -91,6 +85,51 @@
                 AND s.user_id = #{userId}
             </if>
         </where>
+    </select>
+
+    <!-- 退换货汇总（按退货单创建时间、创建收银员统计） -->
+    <select id="selectReturnSummary" resultType="com.wms.entity.SalesSummaryVO">
+        SELECT
+            COUNT(*) AS returnCount,
+            IFNULL(SUM(sr.total_refund), 0) AS returnDueAmount,
+            IFNULL(SUM(CASE WHEN sr.status = 1 THEN sr.total_refund ELSE 0 END), 0) AS returnPaidAmount
+        FROM sales_return sr
+        <where>
+            <if test="startDate != null and startDate != ''">
+                AND sr.create_time &gt;= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND sr.create_time &lt;= #{endDate}
+            </if>
+            <if test="userId != null">
+                AND sr.user_id = #{userId}
+            </if>
+        </where>
+    </select>
+
+    <!-- 商品销售汇总（饼图数据：今日销售了哪些商品） -->
+    <select id="selectGoodsSales" resultType="com.wms.entity.ProductSalesVO">
+        SELECT
+            g.id AS goodsId,
+            g.name AS goodsName,
+            IFNULL(SUM(sd.count), 0) AS totalQuantity,
+            IFNULL(SUM(sd.subtotal), 0) AS totalAmount
+        FROM sales_detail sd
+        INNER JOIN sales s ON sd.sales_id = s.id
+        INNER JOIN goods g ON sd.goods_id = g.id
+        <where>
+            <if test="startDate != null and startDate != ''">
+                AND s.create_time &gt;= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND s.create_time &lt;= #{endDate}
+            </if>
+            <if test="userId != null">
+                AND s.user_id = #{userId}
+            </if>
+        </where>
+        GROUP BY g.id, g.name
+        ORDER BY totalAmount DESC
     </select>
 
 </mapper>

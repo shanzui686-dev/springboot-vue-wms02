@@ -8,6 +8,7 @@ import com.wms.entity.SalesDTO;
 import com.wms.entity.SalesDetailVO;
 import com.wms.entity.SalesVO;
 import com.wms.entity.SalesSummaryVO;
+import com.wms.entity.ProductSalesVO;
 
 import java.util.List;
 
@@ -54,6 +55,24 @@ public interface ISalesService extends IService<Sales> {
      * @return 销售汇总
      */
     SalesSummaryVO summary(String orderNum, String startDate, String endDate, Integer userId);
+
+    /**
+     * 查询退换货汇总（退货笔数 / 应退款金额 / 实退款金额）
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @param userId 收银员ID
+     * @return 退换货汇总
+     */
+    SalesSummaryVO returnSummary(String startDate, String endDate, Integer userId);
+
+    /**
+     * 查询商品销售汇总（饼图数据：销售了哪些商品）
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @param userId 收银员ID
+     * @return 商品销售汇总列表
+     */
+    List<ProductSalesVO> goodsSales(String startDate, String endDate, Integer userId);
 
     /**
      * 收银台直接退款（回滚库存）

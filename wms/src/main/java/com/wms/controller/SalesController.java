@@ -100,6 +100,34 @@ public class SalesController {
     }
 
     /**
+     * 查询退换货汇总（退货笔数 / 应退款金额 / 实退款金额）
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @param userId 收银员ID
+     * @return 退换货汇总
+     */
+    @GetMapping("/returnSummary")
+    public Result returnSummary(@RequestParam(required = false) String startDate,
+                                @RequestParam(required = false) String endDate,
+                                @RequestParam(required = false) Integer userId) {
+        return Result.suc(salesService.returnSummary(startDate, endDate, userId));
+    }
+
+    /**
+     * 查询商品销售汇总（饼图数据：销售了哪些商品）
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @param userId 收银员ID
+     * @return 商品销售汇总列表
+     */
+    @GetMapping("/goodsSales")
+    public Result goodsSales(@RequestParam(required = false) String startDate,
+                             @RequestParam(required = false) String endDate,
+                             @RequestParam(required = false) Integer userId) {
+        return Result.suc(salesService.goodsSales(startDate, endDate, userId));
+    }
+
+    /**
      * 收银台直接退款接口
      * @param orderNum 销售单流水号
      * @return 退款结果

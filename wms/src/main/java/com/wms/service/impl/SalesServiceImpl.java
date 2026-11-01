@@ -11,6 +11,7 @@ import com.wms.entity.SalesDetail;
 import com.wms.entity.SalesDetailVO;
 import com.wms.entity.SalesReturn;
 import com.wms.entity.SalesSummaryVO;
+import com.wms.entity.ProductSalesVO;
 import com.wms.entity.SalesVO;
 import com.wms.entity.Record;
 import com.wms.mapper.GoodsBatchMapper;
@@ -188,6 +189,16 @@ public class SalesServiceImpl extends ServiceImpl<SalesMapper, Sales> implements
     @Override
     public SalesSummaryVO summary(String orderNum, String startDate, String endDate, Integer userId) {
         return salesMapper.selectSalesSummary(orderNum, startDate, endDate, userId);
+    }
+
+    @Override
+    public SalesSummaryVO returnSummary(String startDate, String endDate, Integer userId) {
+        return salesMapper.selectReturnSummary(startDate, endDate, userId);
+    }
+
+    @Override
+    public List<ProductSalesVO> goodsSales(String startDate, String endDate, Integer userId) {
+        return salesMapper.selectGoodsSales(startDate, endDate, userId);
     }
 
     /**

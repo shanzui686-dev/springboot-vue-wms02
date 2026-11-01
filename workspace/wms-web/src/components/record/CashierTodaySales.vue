@@ -1,15 +1,15 @@
 <template>
   <div class="cashier-today-sales">
-    <!-- 顶部统计卡片（仿店长统计页风格） -->
+    <!-- 顶部统计卡片 — 第1行 -->
     <el-row :gutter="20" class="stats-cards">
-      <el-col :span="6">
+      <el-col :span="8">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
             <div class="stat-icon order-icon">
               <el-icon :size="40"><Tickets /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-label">{{ searchDate ? '今日销售笔数' : '销售笔数' }}</div>
+              <div class="stat-label">今日销售笔数</div>
               <div class="stat-value">
                 <count-to :end-val="summary.count" :duration="2000" :decimals="0" />
               </div>
@@ -18,14 +18,14 @@
         </el-card>
       </el-col>
 
-      <el-col :span="6">
+      <el-col :span="8">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
             <div class="stat-icon sales-icon">
               <el-icon :size="40"><Money /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-label">{{ searchDate ? '今日应收总额' : '应收总额' }}</div>
+              <div class="stat-label">今日应收总额</div>
               <div class="stat-value">
                 <count-to :end-val="summary.totalAmount" :duration="2000" prefix="¥" />
               </div>
@@ -34,14 +34,14 @@
         </el-card>
       </el-col>
 
-      <el-col :span="6">
+      <el-col :span="8">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
             <div class="stat-icon net-icon">
               <el-icon :size="40"><Coin /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-label">{{ searchDate ? '今日实收总额' : '实收总额' }}</div>
+              <div class="stat-label">今日实收总额</div>
               <div class="stat-value">
                 <count-to :end-val="summary.realAmount" :duration="2000" prefix="¥" />
               </div>
@@ -49,145 +49,90 @@
           </div>
         </el-card>
       </el-col>
+    </el-row>
 
-      <el-col :span="6">
+    <!-- 顶部统计卡片 — 第2行 -->
+    <el-row :gutter="20" class="stats-cards">
+      <el-col :span="8">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
             <div class="stat-icon return-icon">
               <el-icon :size="40"><RefreshLeft /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-label">{{ searchDate ? '今日退换货笔数' : '退换货笔数' }}</div>
+              <div class="stat-label">今日退货笔数</div>
               <div class="stat-value">
-                <count-to :end-val="summary.returnCount" :duration="2000" :decimals="0" />
+                <count-to :end-val="returnSummary.returnCount" :duration="2000" :decimals="0" />
               </div>
-              <div class="stat-sub">已退货 {{ summary.returnDoneCount }} · 待退款 {{ summary.returnPendingCount }}</div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+
+      <el-col :span="8">
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-content">
+            <div class="stat-icon due-icon">
+              <el-icon :size="40"><Warning /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">今日应退款金额</div>
+              <div class="stat-value">
+                <count-to :end-val="returnSummary.returnDueAmount" :duration="2000" prefix="¥" />
+              </div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+
+      <el-col :span="8">
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-content">
+            <div class="stat-icon paid-icon">
+              <el-icon :size="40"><CircleCheck /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">今日实退款金额</div>
+              <div class="stat-value">
+                <count-to :end-val="returnSummary.returnPaidAmount" :duration="2000" prefix="¥" />
+              </div>
             </div>
           </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <!-- 销售记录 -->
-    <el-row :gutter="20" class="tables-section">
-      <el-col :span="24">
-        <el-card class="table-card" shadow="hover">
+    <!-- 饼图区：今日销售了哪些商品 -->
+    <el-row :gutter="20" class="charts-section">
+      <el-col :span="12">
+        <el-card class="chart-card" shadow="hover">
           <template #header>
             <div class="card-header">
-              <span>{{ searchDate ? '今日销售记录' : '全部销售记录' }}</span>
-              <!-- 查询区 -->
-              <div class="header-search">
-                <el-date-picker
-                  v-model="searchDate"
-                  type="date"
-                  placeholder="选择日期"
-                  value-format="YYYY-MM-DD"
-                  clearable
-                  style="width: 150px"
-                />
-                <el-input
-                  v-model="searchOrderNum"
-                  placeholder="流水单号"
-                  clearable
-                  style="width: 170px"
-                />
-                <el-button type="primary" :icon="Search" @click="handleSearch">查询</el-button>
-                <el-button @click="handleReset">重置</el-button>
-              </div>
+              <span>今日商品销售金额占比</span>
             </div>
           </template>
+          <div ref="amountChartRef" class="chart-container"></div>
+        </el-card>
+      </el-col>
 
-          <el-table :data="tableData" border stripe v-loading="loading" style="width: 100%">
-            <el-table-column prop="orderNum" label="流水单号" width="180" />
-            <el-table-column prop="totalAmount" label="应收总额" width="120">
-              <template #default="{ row }">¥{{ formatAmount(row.totalAmount) }}</template>
-            </el-table-column>
-            <el-table-column prop="realAmount" label="实收金额" width="120">
-              <template #default="{ row }">¥{{ formatAmount(row.realAmount) }}</template>
-            </el-table-column>
-            <el-table-column prop="changeAmount" label="找零" width="100">
-              <template #default="{ row }">¥{{ formatAmount(row.changeAmount) }}</template>
-            </el-table-column>
-            <el-table-column label="支付方式" width="100" align="center">
-              <template #default="{ row }">
-                <el-tag :type="row.paymentMethod === 1 ? 'success' : 'primary'">
-                  {{ row.paymentMethod === 1 ? '现金' : '扫码' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="销售状态" width="100" align="center">
-              <template #default="{ row }">
-                <el-tag :type="row.status === 1 ? 'danger' : 'success'">
-                  {{ row.status === 1 ? '已退款' : '正常' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="createTime" label="结账时间" width="180">
-              <template #default="{ row }">{{ formatDateTime(row.createTime) }}</template>
-            </el-table-column>
-            <el-table-column label="退货状态" width="100" align="center">
-              <template #default="{ row }">
-                <el-tag v-if="row.returnStatus === 2" type="success">已退货</el-tag>
-                <el-tag v-else-if="row.returnStatus === 1" type="warning">待退款</el-tag>
-                <el-tag v-else type="info">未退货</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" fixed="right" width="120">
-              <template #default="{ row }">
-                <el-button type="primary" size="small" @click="handleViewDetails(row)">查看明细</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-
-          <!-- 分页 -->
-          <el-pagination
-            v-model:current-page="pageNum"
-            v-model:page-size="pageSize"
-            :page-sizes="[10, 20, 50, 100]"
-            :total="total"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
-            class="pagination"
-          />
+      <el-col :span="12">
+        <el-card class="chart-card" shadow="hover">
+          <template #header>
+            <div class="card-header">
+              <span>今日商品销量占比</span>
+            </div>
+          </template>
+          <div ref="quantityChartRef" class="chart-container"></div>
         </el-card>
       </el-col>
     </el-row>
-
-    <!-- 销售明细弹窗 -->
-    <el-dialog
-      v-model="detailDialogVisible"
-      :title="`销售单明细 - ${currentOrderNum}`"
-      width="600px"
-      :close-on-click-modal="false"
-    >
-      <el-table :data="detailList" border stripe style="width: 100%">
-        <el-table-column prop="goodsName" label="商品名称" min-width="150" />
-        <el-table-column prop="price" label="单价" width="100">
-          <template #default="{ row }">¥{{ formatAmount(row.price) }}</template>
-        </el-table-column>
-        <el-table-column prop="count" label="数量" width="100" align="center" />
-        <el-table-column prop="subtotal" label="小计" width="120">
-          <template #default="{ row }">¥{{ formatAmount(row.subtotal) }}</template>
-        </el-table-column>
-        <el-table-column label="明细状态" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'danger' : row.status === 2 ? 'warning' : 'success'">
-              {{ row.status === 1 ? '退货' : row.status === 2 ? '换货' : '正常' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-      </el-table>
-      <template #footer>
-        <el-button @click="detailDialogVisible = false">关闭</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, getCurrentInstance } from 'vue'
-import { Search, Money, Coin, Tickets, RefreshLeft } from '@element-plus/icons-vue'
+import { ref, onMounted, getCurrentInstance, nextTick } from 'vue'
+import { Money, Coin, Tickets, RefreshLeft, Warning, CircleCheck } from '@element-plus/icons-vue'
+import * as echarts from 'echarts'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
@@ -256,70 +201,80 @@ const getToday = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-// 搜索条件（日期默认今天，清空可查全部历史）
-const searchDate = ref(getToday())
-const searchOrderNum = ref('')
+// 统计数据（固定今日 + 本人）
+const summary = ref({ count: 0, totalAmount: 0, realAmount: 0 })
+const returnSummary = ref({ returnCount: 0, returnDueAmount: 0, returnPaidAmount: 0 })
+const goodsSales = ref([])
 
-// 列表数据
-const tableData = ref([])
-const loading = ref(false)
-const pageNum = ref(1)
-const pageSize = ref(10)
-const total = ref(0)
+// 图表引用
+const amountChartRef = ref(null)
+const quantityChartRef = ref(null)
+let amountChartInstance = null
+let quantityChartInstance = null
 
-// 汇总数据
-const summary = ref({ count: 0, totalAmount: 0, realAmount: 0, returnCount: 0, returnDoneCount: 0, returnPendingCount: 0 })
-
-// 明细弹窗
-const detailDialogVisible = ref(false)
-const detailList = ref([])
-const currentOrderNum = ref('')
-
-const formatAmount = (val) => Number(val || 0).toFixed(2)
-
-const formatDateTime = (dateTime) => {
-  if (!dateTime) return ''
-  const d = new Date(dateTime)
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
-}
-
-// 构建查询参数（收银员固定查自己；日期含 00:00:00 ~ 23:59:59）
+// 查询参数（今日 + 本人）
 const buildParams = () => {
-  const params = { userId: user.id }
-  if (searchOrderNum.value) {
-    params.orderNum = searchOrderNum.value
+  const today = getToday()
+  return {
+    userId: user.id,
+    startDate: today + ' 00:00:00',
+    endDate: today + ' 23:59:59'
   }
-  if (searchDate.value) {
-    params.startDate = searchDate.value + ' 00:00:00'
-    params.endDate = searchDate.value + ' 23:59:59'
-  }
-  return params
 }
 
-// 加载销售记录列表
-const loadSalesList = () => {
-  loading.value = true
-  const params = { ...buildParams(), page: pageNum.value, limit: pageSize.value }
-  axios.get(httpUrl + '/sales/listPage', { params })
-    .then(res => {
-      const result = res.data
-      if (result.code === 200) {
-        tableData.value = result.data.records || []
-        total.value = result.data.total || 0
-      } else {
-        ElMessage.error(result.msg || '获取数据失败')
+// 初始化饼图（与店长统计页分类饼图同款样式）
+const initPieChart = (chartInstance, chartRef, data, valueKey) => {
+  if (!chartRef.value) return null
+
+  if (chartInstance) chartInstance.dispose()
+  chartInstance = echarts.init(chartRef.value)
+
+  const pieData = data.map(item => ({
+    name: item.goodsName,
+    value: item[valueKey] || 0
+  }))
+
+  const option = {
+    tooltip: {
+      trigger: 'item',
+      formatter: '{b}: {c} ({d}%)'
+    },
+    legend: {
+      orient: 'vertical',
+      left: 'left'
+    },
+    series: [
+      {
+        name: '销售占比',
+        type: 'pie',
+        radius: ['40%', '70%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 10,
+          borderColor: '#fff',
+          borderWidth: 2
+        },
+        label: {
+          show: true,
+          formatter: '{b}\n{d}%'
+        },
+        emphasis: {
+          label: {
+            show: true,
+            fontSize: 16,
+            fontWeight: 'bold'
+          }
+        },
+        data: pieData
       }
-    })
-    .catch(() => {
-      ElMessage.error('请求失败')
-    })
-    .finally(() => {
-      loading.value = false
-    })
+    ]
+  }
+
+  chartInstance.setOption(option)
+  return chartInstance
 }
 
-// 加载汇总统计（与列表同参数，跨页准确）
+// 加载销售汇总
 const loadSummary = () => {
   axios.get(httpUrl + '/sales/summary', { params: buildParams() })
     .then(res => {
@@ -329,56 +284,55 @@ const loadSummary = () => {
       }
     })
     .catch(() => {
-      ElMessage.error('汇总加载失败')
+      ElMessage.error('销售汇总加载失败')
     })
 }
 
-// 查询按钮
-const handleSearch = () => {
-  pageNum.value = 1
-  loadSalesList()
-  loadSummary()
-}
-
-// 重置（恢复默认：日期=今天、流水号清空，并重新加载）
-const handleReset = () => {
-  searchDate.value = getToday()
-  searchOrderNum.value = ''
-  pageNum.value = 1
-  loadSalesList()
-  loadSummary()
-}
-
-// 查看明细
-const handleViewDetails = (row) => {
-  currentOrderNum.value = row.orderNum
-  axios.get(httpUrl + '/sales/getDetails', { params: { salesId: row.id } })
+// 加载退换货汇总
+const loadReturnSummary = () => {
+  axios.get(httpUrl + '/sales/returnSummary', { params: buildParams() })
     .then(res => {
       const result = res.data
-      if (result.code === 200) {
-        detailList.value = result.data || []
-        detailDialogVisible.value = true
-      } else {
-        ElMessage.error(result.msg || '获取明细失败')
+      if (result.code === 200 && result.data) {
+        returnSummary.value = result.data
       }
     })
     .catch(() => {
-      ElMessage.error('请求失败')
+      ElMessage.error('退换货汇总加载失败')
     })
 }
 
-const handleSizeChange = () => {
-  pageNum.value = 1
-  loadSalesList()
+// 加载商品销售汇总并渲染饼图
+const loadGoodsSales = async () => {
+  try {
+    const res = await axios.get(httpUrl + '/sales/goodsSales', { params: buildParams() })
+    const result = res.data
+    if (result.code === 200) {
+      goodsSales.value = result.data || []
+    } else {
+      ElMessage.error(result.msg || '商品销售数据加载失败')
+    }
+    await nextTick()
+    amountChartInstance = initPieChart(amountChartInstance, amountChartRef, goodsSales.value, 'totalAmount')
+    quantityChartInstance = initPieChart(quantityChartInstance, quantityChartRef, goodsSales.value, 'totalQuantity')
+    window.addEventListener('resize', () => {
+      amountChartInstance?.resize()
+      quantityChartInstance?.resize()
+    })
+  } catch (error) {
+    ElMessage.error('商品销售数据加载失败')
+  }
 }
 
-const handleCurrentChange = () => {
-  loadSalesList()
+// 加载所有数据
+const loadAllData = () => {
+  loadSummary()
+  loadReturnSummary()
+  loadGoodsSales()
 }
 
 onMounted(() => {
-  loadSalesList()
-  loadSummary()
+  loadAllData()
 })
 </script>
 
@@ -437,6 +391,16 @@ onMounted(() => {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
+.due-icon {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+  color: #e6a23c;
+}
+
+.paid-icon {
+  background: linear-gradient(135deg, #96fbc4 0%, #f9f586 100%);
+  color: #67C23A;
+}
+
 .stat-info {
   flex: 1;
 }
@@ -453,18 +417,12 @@ onMounted(() => {
   color: #303133;
 }
 
-.stat-sub {
-  margin-top: 4px;
-  font-size: 12px;
-  color: #909399;
-}
-
-/* 表格区域样式 */
-.tables-section {
+/* 图表区域样式 */
+.charts-section {
   margin-bottom: 20px;
 }
 
-.table-card {
+.chart-card {
   border-radius: 8px;
 }
 
@@ -474,25 +432,21 @@ onMounted(() => {
   align-items: center;
   font-weight: bold;
   font-size: 16px;
-  flex-wrap: wrap;
-  gap: 10px;
 }
 
-.header-search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: normal;
-}
-
-.pagination {
-  margin-top: 12px;
+.chart-container {
+  height: 350px;
+  width: 100%;
 }
 
 /* 响应式调整 */
 @media (max-width: 1200px) {
   .stat-value {
     font-size: 24px;
+  }
+
+  .chart-container {
+    height: 300px;
   }
 }
 </style>
