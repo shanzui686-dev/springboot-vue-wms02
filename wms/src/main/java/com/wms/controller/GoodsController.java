@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.common.Log;
 import com.wms.common.QueryPageParam;
+import com.wms.common.RequireRole;
 import com.wms.common.Result;
 import com.wms.entity.Goods;
 import com.wms.entity.GoodsBatch;
@@ -33,6 +34,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/goods")
+@RequireRole({0, 1}) // 店长+库存管理员可操作商品
 public class GoodsController {
     @Autowired
     private IGoodsService goodsService;
@@ -121,6 +123,7 @@ public class GoodsController {
         return goodsService.removeById(id)?Result.suc():Result.fail();
     }
     @PostMapping("/listPage")
+    @RequireRole({0, 1, 2}) // 收银员只读
     public Result listPage(@RequestBody QueryPageParam query ){
         HashMap param=query.getParam();
         String name=(String) param.get("name");
@@ -164,6 +167,7 @@ public class GoodsController {
      * @param limit 每页数量（可选，默认1000）
      */
     @GetMapping("/list")
+    @RequireRole({0, 1, 2}) // 收银员只读
     public Result listByBarcode(@RequestParam(required = false) String barcode,
                                  @RequestParam(required = false, defaultValue = "1") Integer page,
                                  @RequestParam(required = false, defaultValue = "1000") Integer limit){
@@ -189,6 +193,7 @@ public class GoodsController {
      * @return 商品详细信息
      */
     @GetMapping("/findByBarcode")
+    @RequireRole({0, 1, 2}) // 收银员只读（收银台扫码用）
     public Result findByBarcode(@RequestParam String barcode){
         if(StringUtils.isBlank(barcode)){
             return Result.fail("条码不能为空");
@@ -206,6 +211,7 @@ public class GoodsController {
 
     /** 查询某商品的批次库存详情（多仓库库存分布） */
     @GetMapping("/batchStock")
+    @RequireRole({0, 1, 2}) // 收银员只读
     public Result batchStock(@RequestParam Integer goodsId) {
         List<GoodsBatch> batches = goodsService.getBatchStock(goodsId);
         return Result.suc(batches);
@@ -238,6 +244,7 @@ public class GoodsController {
 
     /** 批次库存总览（跨商品查询，支持按商品名/供应商/仓库/批次号筛选） */
     @PostMapping("/batchList")
+    @RequireRole({0, 1, 2}) // 收银员只读
     public Result batchList(@RequestBody QueryPageParam query) {
         HashMap param = query.getParam();
         String goodsName = (String) param.get("goodsName");

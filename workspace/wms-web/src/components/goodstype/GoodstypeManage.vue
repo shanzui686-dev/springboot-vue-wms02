@@ -7,6 +7,7 @@ import { ElMessage } from 'element-plus'
 const { proxy } = getCurrentInstance()
 const httpUrl = proxy.$httpUrl
 const $message = ElMessage
+const user = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}')
 
 const tableData = ref([])
 const pageSize = ref(10)
@@ -148,7 +149,7 @@ onBeforeMount(() => {
       <el-input v-model="name" @keyup.enter="loadPost" placeholder="请输入分类名称" :suffix-icon="Search" style="width: 200px;"></el-input>
       <el-button type="primary" style="margin-left: 10px;" @click="loadPost">查询</el-button>
       <el-button type="success" @click="resetParam" >重置</el-button>
-      <el-button type="primary" style="margin-left: 10px;" @click="add">新增</el-button>
+      <el-button v-if="user.roleId === 0 || user.roleId === 1" type="primary" style="margin-left: 10px;" @click="add">新增</el-button>
     </div>
     <el-table :data="tableData" style="width: 100%;"
               :header-cell-style="{background:'#f2f5fc',color:'#555'}"
@@ -157,7 +158,7 @@ onBeforeMount(() => {
       <el-table-column prop="id" label="ID" width="140"></el-table-column>
       <el-table-column prop="name" label="分类名称" width="200"></el-table-column>
       <el-table-column prop="remark" label="备注"></el-table-column>
-      <el-table-column prop="operate" label="操作" width="200">
+      <el-table-column v-if="user.roleId === 0 || user.roleId === 1" prop="operate" label="操作" width="200">
         <template #default="scope">
           <el-button size="small" type="success" @click="mod(scope.row)">编辑</el-button>
           <el-popconfirm

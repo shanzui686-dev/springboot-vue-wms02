@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.common.Log;
 import com.wms.common.QueryPageParam;
+import com.wms.common.RequireRole;
 import com.wms.common.Result;
 import com.wms.entity.Goodstype;
 import com.wms.service.IGoodstypeService;
@@ -26,6 +27,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/goodstype")
+@RequireRole({0, 1}) // 店长+库存管理员可管理商品分类
 public class GoodstypeController {
     @Autowired
     private IGoodstypeService goodstypeService;
@@ -48,6 +50,7 @@ public class GoodstypeController {
         return goodstypeService.removeById(id)?Result.suc():Result.fail();
     }
     @PostMapping("/listPage")
+    @RequireRole({0, 1, 2}) // 收银员只读
     public Result listPage(@RequestBody QueryPageParam query ){
         HashMap param=query.getParam();
         String name=(String) param.get("name");
@@ -65,6 +68,7 @@ public class GoodstypeController {
         return Result.suc(result.getRecords(),result.getTotal());
     }
     @GetMapping("/list")
+    @RequireRole({0, 1, 2}) // 收银员只读
     public Result list(){
         List list = goodstypeService.list();
         // 在内存中过滤包含 roleId 权限的菜单
@@ -76,6 +80,7 @@ public class GoodstypeController {
      * @return 分类列表（包含id和name）
      */
     @GetMapping("/listAll")
+    @RequireRole({0, 1, 2}) // 收银员只读
     public Result listAll(){
         List<Goodstype> list = goodstypeService.list();
         return Result.suc(list);
