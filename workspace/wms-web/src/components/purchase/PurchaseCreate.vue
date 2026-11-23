@@ -1,5 +1,5 @@
 <script setup>
-import { ref, getCurrentInstance, computed } from 'vue'
+import { ref, getCurrentInstance, computed, watch, onBeforeUnmount } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
@@ -11,6 +11,13 @@ const $message = ElMessage
 // 定义事件
 const emit = defineEmits(['success', 'close'])
 
+// 当前本地时间 yyyy-MM-dd HH:mm:ss（不能用 toISOString，它是 UTC 时间，时分秒会差时区偏移）
+const nowLocal = () => {
+  const d = new Date()
+  const p = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+}
+
 // 对话框控制
 const dialogVisible = ref(false)
 
@@ -19,10 +26,37 @@ const formRef = ref(null)
 const form = ref({
   purchaseNo: '',
   supplierId: null,
-  purchaseDate: new Date().toISOString().slice(0, 19).replace('T', ' '),
+  purchaseDate: nowLocal(),
   totalAmount: 0,
   remark: '',
   details: []
+})
+
+// 采购日期随系统时间实时更新（对话框打开期间每秒刷新，手动选择后停止）
+let dateTimer = null
+
+// 手动选择日期后停止自动更新
+const onDateChange = () => {
+  if (dateTimer) {
+    clearInterval(dateTimer)
+    dateTimer = null
+  }
+}
+
+watch(dialogVisible, (visible) => {
+  if (visible) {
+    form.value.purchaseDate = nowLocal()
+    dateTimer = setInterval(() => {
+      form.value.purchaseDate = nowLocal()
+    }, 1000)
+  } else if (dateTimer) {
+    clearInterval(dateTimer)
+    dateTimer = null
+  }
+})
+
+onBeforeUnmount(() => {
+  if (dateTimer) clearInterval(dateTimer)
 })
 
 // 供应商列表
@@ -66,7 +100,7 @@ const resetForm = () => {
   form.value = {
     purchaseNo: '',
     supplierId: null,
-    purchaseDate: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    purchaseDate: nowLocal(),
     totalAmount: 0,
     remark: '',
     details: []
@@ -347,6 +381,7 @@ defineExpose({
                 placeholder="选择日期时间"
                 style="width: 100%"
                 value-format="YYYY-MM-DD HH:mm:ss"
+                @change="onDateChange"
               >
               </el-date-picker>
             </el-form-item>

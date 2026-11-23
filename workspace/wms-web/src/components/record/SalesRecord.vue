@@ -67,9 +67,14 @@
             ¥{{ formatAmount(row.changeAmount) }}
           </template>
         </el-table-column>
-        <el-table-column label="支付方式" width="120">
+        <el-table-column label="支付方式" width="100" align="center">
           <template #default="{ row }">
-            <el-tag type="success">现金</el-tag>
+            <el-tag :type="row.paymentMethod === 1 ? 'success' : 'primary'">{{ row.paymentMethod === 1 ? '现金' : '扫码' }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="销售状态" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 1 ? 'danger' : 'success'">{{ row.status === 1 ? '已退款' : '正常' }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="结账时间" width="180">
@@ -143,6 +148,14 @@
             ¥{{ formatAmount(row.subtotal) }}
           </template>
         </el-table-column>
+        <el-table-column prop="batchNo" label="批次号" min-width="140" show-overflow-tooltip />
+        <el-table-column label="明细状态" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 1 ? 'danger' : row.status === 2 ? 'warning' : 'success'">
+              {{ row.status === 1 ? '退货' : row.status === 2 ? '换货' : '正常' }}
+            </el-tag>
+          </template>
+        </el-table-column>
       </el-table>
 
       <!-- 总金额汇总 -->
@@ -204,6 +217,13 @@
             ¥{{ formatAmount(row.price * (row.returnCount || 0)) }}
           </template>
         </el-table-column>
+        <el-table-column v-if="returnForm.type === 2" label="换货商品" min-width="200">
+          <template #default="{ row }">
+            <el-select v-model="row.exchangeGoodsId" placeholder="选择换货商品" clearable filterable style="width: 100%">
+              <el-option v-for="g in getExchangeOptions(row)" :key="g.id" :label="`${g.name} (库存:${g.count - g.reservedCount})`" :value="g.id" />
+            </el-select>
+          </template>
+        </el-table-column>
       </el-table>
 
       <!-- 预计退款总额 -->
@@ -225,6 +245,24 @@
             maxlength="200"
             show-word-limit
           />
+        </el-form-item>
+        <el-form-item label="退换类型" label-width="100px">
+          <el-radio-group v-model="returnForm.type" @change="loadExchangeGoods">
+            <el-radio :value="1">退货</el-radio>
+            <el-radio :value="2">换货</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="二次销售" label-width="100px">
+          <el-switch
+            v-model="returnForm.isResalable"
+            :active-value="0"
+            :inactive-value="1"
+            active-text="可"
+            inactive-text="不可"
+          />
+          <span style="margin-left: 8px; color: #909399; font-size: 12px;">
+            {{ returnForm.isResalable === 1 ? '将自动生成销售损耗单' : '正常退货入库' }}
+          </span>
         </el-form-item>
       </el-form>
 
@@ -251,6 +289,7 @@ defineOptions({
 const { proxy } = getCurrentInstance()
 const httpUrl = proxy.$httpUrl
 const $message = ElMessage
+const user = JSON.parse(sessionStorage.getItem('user') || '{}')
 
 // ==================== 数据定义 ====================
 
@@ -315,8 +354,37 @@ const currentSalesId = ref(null)
 
 // 退货表单
 const returnForm = ref({
-  returnReason: ''
+  returnReason: '',
+  type: 1,
+  isResalable: 0
 })
+
+// 换货可选商品列表
+const exchangeGoodsList = ref([])
+
+// 监听换货类型切换，加载可选商品
+const loadExchangeGoods = () => {
+  if (returnForm.value.type === 2 && exchangeGoodsList.value.length === 0) {
+    axios.get(httpUrl + '/goods/list', { params: { page: 1, limit: 1000 } })
+      .then(res => {
+        if (res.data.code === 200) {
+          exchangeGoodsList.value = res.data.data?.records || res.data.data || []
+        }
+      })
+      .catch(() => {})
+  }
+}
+
+/** 获取某行的换货可选商品（限定同分类 + 同价格） */
+const getExchangeOptions = (row) => {
+  if (!exchangeGoodsList.value.length) return []
+  const current = exchangeGoodsList.value.find(g => g.id === row.goodsId)
+  if (!current || current.goodsType == null) return exchangeGoodsList.value
+  return exchangeGoodsList.value.filter(g =>
+    g.goodsType === current.goodsType &&
+    Number(g.retailPrice) === Number(current.retailPrice)
+  )
+}
 
 // ==================== 计算属性 ====================
 
@@ -393,7 +461,11 @@ const loadSalesList = () => {
   if (searchForm.value.endDate) {
     params.endDate = searchForm.value.endDate + ' 23:59:59'
   }
-  
+  // 收银员只看自己的记录
+  if (user.roleId === 2) {
+    params.userId = user.id
+  }
+
   axios.get(httpUrl + '/sales/listPage', { params })
     .then(res => {
       const result = res.data
@@ -491,10 +563,13 @@ const handleOpenReturnDialog = (row) => {
         // 初始化退货数量字段
         returnDetailList.value = (result.data || []).map(item => ({
           ...item,
-          returnCount: 0 // 默认退货数量为 0
+          returnCount: 0,
+          exchangeGoodsId: null
         }))
         // 重置表单
         returnForm.value.returnReason = ''
+        returnForm.value.type = 1
+        returnForm.value.isResalable = 0
         returnDialogVisible.value = true
       } else {
         $message.error(result.msg || '获取明细失败')
@@ -521,7 +596,8 @@ const handleSubmitReturn = () => {
     .filter(item => item.returnCount > 0)
     .map(item => ({
       goodsId: item.goodsId,
-      returnCount: item.returnCount
+      returnCount: item.returnCount,
+      exchangeGoodsId: item.exchangeGoodsId || null
     }))
   
   if (items.length === 0) {
@@ -533,6 +609,8 @@ const handleSubmitReturn = () => {
   const requestData = {
     salesId: currentSalesId.value,
     returnReason: returnForm.value.returnReason,
+    type: returnForm.value.type,
+    isResalable: returnForm.value.isResalable,
     items: items
   }
   

@@ -43,7 +43,7 @@ const isValid = ref('') // 默认不筛选，显示全部用户
 const centerDialogVisible = ref(false)
 const formRef = ref(null)
 const resetForm = () => {
-  formRef.value.resetFields();
+  formRef.value?.resetFields();
 }
 const form = ref({
   id:'',
@@ -120,7 +120,7 @@ const mod = (row) => {
   form.value.age= row.age+''
   form.value.sex= row.sex+''
   form.value.phone= row.phone
-  form.value.roleId= row.roleId
+  form.value.roleId= '2'
   centerDialogVisible.value = true
 }
 const del = (id) => {
@@ -136,7 +136,7 @@ const del = (id) => {
         age: '',
         phone: '',
         sex:'0',
-        roleId: ''
+        roleId: '2'
       }
       loadPost() // 刷新列表
       $message.success('操作成功!')
@@ -159,7 +159,7 @@ const save = () => {
         age: form.value.age ? parseInt(form.value.age) : null,
         sex: form.value.sex !== undefined ? parseInt(form.value.sex) : 1,
         phone: form.value.phone,
-        roleId: form.value.roleId ? parseInt(form.value.roleId) : 2, // 默认普通用户
+        roleId: 2,
         isvalid: 'Y'
       }
 
@@ -186,7 +186,7 @@ const save = () => {
               age: '',
               phone: '',
               sex:'0',
-              roleId: ''
+              roleId: '2'
             }
             loadPost() // 刷新列表
             $message.success('操作成功!')
@@ -213,7 +213,7 @@ const save = () => {
               age: '',
               phone: '',
               sex:'0',
-              roleId: ''
+              roleId: '2'
             }
             loadPost() // 刷新列表
             $message.success('操作成功!')
@@ -377,8 +377,8 @@ onBeforeMount(() => {
       <el-table-column prop="roleId" label="角色" width="120">
         <template #default="scope">
           <el-tag
-              :type="scope.row.roleId=== 0 ? 'danger' : (scope.row.roleId=== 1 ? 'primary' : 'success')"
-              disable-transitions>{{scope.row.roleId=== 0 ? '系统管理员' : (scope.row.roleId=== 1 ? '管理员' : '用户')}}</el-tag>
+              :type="scope.row.roleId=== 0 ? 'danger' : (scope.row.roleId=== 1 ? 'warning' : 'success')"
+              disable-transitions>{{scope.row.roleId=== 0 ? '店长' : (scope.row.roleId=== 1 ? '库存管理员' : '收银员')}}</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="phone" label="电话" width="180"></el-table-column>

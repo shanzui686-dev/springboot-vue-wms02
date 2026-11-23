@@ -25,6 +25,7 @@ const form = ref({
   contact: '',
   phone: '',
   address: '',
+  businessLicense: '',
   status: 1,
   remark: ''
 })
@@ -50,6 +51,7 @@ const add = () => {
     contact: '',
     phone: '',
     address: '',
+    businessLicense: '',
     status: 1,
     remark: ''
   }
@@ -61,6 +63,7 @@ const mod = (row) => {
   form.value.contact = row.contact || ''
   form.value.phone = row.phone || ''
   form.value.address = row.address || ''
+  form.value.businessLicense = row.businessLicense || ''
   form.value.status = row.status !== undefined ? row.status : 1
   form.value.remark = row.remark || ''
   centerDialogVisible.value = true
@@ -83,6 +86,7 @@ const save = () => {
         contact: form.value.contact,
         phone: form.value.phone,
         address: form.value.address,
+        businessLicense: form.value.businessLicense,
         status: form.value.status,
         remark: form.value.remark
       }
@@ -215,7 +219,8 @@ onBeforeMount(() => {
       <el-table-column prop="name" label="供应商名称" width="200"></el-table-column>
       <el-table-column prop="contact" label="联系人" width="120"></el-table-column>
       <el-table-column prop="phone" label="联系电话" width="150"></el-table-column>
-      <el-table-column prop="address" label="地址" min-width="200"></el-table-column>
+      <el-table-column prop="address" label="地址" min-width="180"></el-table-column>
+      <el-table-column prop="businessLicense" label="营业执照" width="200" show-overflow-tooltip></el-table-column>
       <el-table-column prop="status" label="状态" width="120">
         <template #default="scope">
           <el-switch
@@ -290,6 +295,9 @@ onBeforeMount(() => {
             </el-form-item>
           </el-col>
         </el-row>
+        <el-form-item label="营业执照" label-width="100px" prop="businessLicense">
+          <el-input v-model="form.businessLicense" placeholder="请输入营业执照号"></el-input>
+        </el-form-item>
         <el-form-item label="地址" label-width="100px" prop="address">
           <el-input v-model="form.address" placeholder="请输入详细地址"></el-input>
         </el-form-item>

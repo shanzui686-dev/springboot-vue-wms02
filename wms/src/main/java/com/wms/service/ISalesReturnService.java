@@ -16,18 +16,32 @@ import java.util.List;
 public interface ISalesReturnService extends IService<SalesReturn> {
 
     /**
-     * 发起退货申请
+     * 发起退货申请（type=1创建待退款申请单；type=2换货即时执行）
      * @param returnApplyDTO 退货申请DTO
      * @return 退货单ID
      */
     Integer applyReturn(ReturnApplyDTO returnApplyDTO);
 
     /**
-     * 确认退款并回滚库存
+     * 收银台整单提交退款申请（类型=退货、状态=待退款）
+     * @param orderNum 销售单号
+     * @return 退货单ID
+     */
+    Integer applyWholeOrder(String orderNum);
+
+    /**
+     * 确认退款并回滚库存（仅店长，仅待退款的退货单）
      * @param returnId 退货单ID
      * @return 是否成功
      */
     Boolean confirmRefund(Integer returnId);
+
+    /**
+     * 拒绝退款（仅店长，状态变为已拒绝，不退款不回滚库存）
+     * @param returnId 退货单ID
+     * @return 是否成功
+     */
+    Boolean rejectRefund(Integer returnId);
 
     /**
      * 分页查询退货单列表

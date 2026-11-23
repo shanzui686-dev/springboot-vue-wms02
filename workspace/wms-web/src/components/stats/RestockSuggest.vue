@@ -87,21 +87,39 @@ const exportReport = () => {
 
 // 快捷采购
 const quickPurchase = (row) => {
-  // 跳转到采购单创建页面，并携带商品信息
-  const purchaseData = {
-    goodsId: row.goodsId,
-    goodsName: row.goodsName,
-    suggestQuantity: row.suggestQuantity
+  const user = JSON.parse(sessionStorage.getItem('user') || '{}')
+  if (!user.id) {
+    $message.error('请先登录')
+    return
   }
-  
-  // 使用 sessionStorage 传递数据
-  sessionStorage.setItem('quickPurchaseData', JSON.stringify(purchaseData))
-  
-  // 触发路由跳转或打开采购单创建对话框
-  // 这里使用自定义事件通知父组件
-  window.dispatchEvent(new CustomEvent('quick-purchase', { detail: purchaseData }))
-  
-  $message.success(`已将【${row.goodsName}】添加到采购单`)
+  if (!row.supplierId) {
+    $message.error(`【${row.goodsName}】未设置供应商，请先在商品管理中设置`)
+    return
+  }
+
+  const requestData = {
+    userId: user.id,
+    supplierId: row.supplierId,
+    purchaseDate: (() => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}` })(),
+    details: [{
+      goodsId: row.goodsId,
+      count: row.suggestQuantity,
+      price: row.purchasePrice || 0
+    }]
+  }
+
+  axios.post(httpUrl + '/purchase/create', requestData)
+    .then(res => {
+      if (res.data.code === 200) {
+        $message.success(`快捷采购【${row.goodsName}】成功，请在采购管理中审核入库`)
+      } else {
+        $message.error(res.data.msg || '创建采购单失败')
+      }
+    })
+    .catch(error => {
+      console.error('快捷采购失败:', error)
+      $message.error('请求失败')
+    })
 }
 
 // 组件挂载时加载数据

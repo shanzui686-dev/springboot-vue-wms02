@@ -115,19 +115,6 @@ public class PurchaseController {
     }
 
     /**
-     * 店长审核采购单（状态 待审核→已审核待入库）
-     */
-    @Log("审核采购单")
-    @PostMapping("/audit")
-    public Result audit(@RequestParam Integer purchaseId) {
-        try {
-            return purchaseService.audit(purchaseId) ? Result.suc() : Result.fail();
-        } catch (RuntimeException e) {
-            return Result.fail(e.getMessage());
-        }
-    }
-
-    /**
      * 确认入库（店长选择仓库+填写入库数量）
      */
     @Log("采购入库")

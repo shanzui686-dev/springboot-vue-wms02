@@ -41,9 +41,10 @@ const name = ref('')
 const sex = ref('')
 const isValid = ref('') // 默认不筛选，显示全部用户
 const centerDialogVisible = ref(false)
+const saving = ref(false)
 const formRef = ref(null)
 const resetForm = () => {
-  formRef.value.resetFields();
+  formRef.value?.resetFields();
 }
 const form = ref({
   id:'',
@@ -107,8 +108,18 @@ const statusOptions = ref([
 ])
 
 const add = () => {
+  resetForm()
+  form.value = {
+    id:'',
+    no:'',
+    name: '',
+    password: '',
+    age: '',
+    phone: '',
+    sex:'0',
+    roleId: '1'
+  }
   centerDialogVisible.value = true
-  console.log('打开新增对话框')
 }
 const mod = (row) => {
   form.value.id= row.id
@@ -118,7 +129,7 @@ const mod = (row) => {
   form.value.age= row.age+''
   form.value.sex= row.sex+''
   form.value.phone= row.phone
-  form.value.roleId= row.roleId
+  form.value.roleId= '1'
   centerDialogVisible.value = true
 }
 const del = (id) => {
@@ -134,7 +145,7 @@ const del = (id) => {
         age: '',
         phone: '',
         sex:'0',
-        roleId: ''
+        roleId: '1'
       }
       loadPost() // 刷新列表
       $message.success('操作成功!')
@@ -144,84 +155,36 @@ const del = (id) => {
   })
 }
 const save = () => {
-  // 验证必填字段
   formRef.value.validate((valid) => {
-    if (valid) {
-      // 准备提交的数据，转换性别为 Integer
-      const submitData = {
-        no: form.value.no,
-        name: form.value.name,
-        password: form.value.password,
-        age: form.value.age ? parseInt(form.value.age) : null,
-        sex: form.value.sex !== undefined ? parseInt(form.value.sex) : 1,
-        phone: form.value.phone,
-        roleId: form.value.roleId ? parseInt(form.value.roleId) : 1, // 默认普通用户
-        isvalid: 'Y'
-      }
-
-      // 如果是编辑，添加 id 字段
-      if(form.value.id){
-        submitData.id = form.value.id
-      }
-
-      console.log('保存数据:', submitData)
-
-      // 判断是新增还是修改
-      if(form.value.id){
-        // 修改操作
-        axios.post(httpUrl+'/user/update', submitData).then(res => {
-          console.log('保存结果:', res)
-          if(res.data.code == 200) {
-            centerDialogVisible.value = false
-            // 重置表单
-            form.value = {
-              no:'',
-              name: '',
-              password: '',
-              age: '',
-              phone: '',
-              sex:'0',
-              roleId: ''
-            }
-            loadPost() // 刷新列表
-            $message.success('操作成功!')
-          } else {
-            $message.error('操作失败!')
-          }
-        }).catch(error => {
-          console.error('保存失败:', error)
-          $message.error('保存失败：' + error.message)
-        })
-      }else {
-        // 新增操作
-        axios.post(httpUrl+'/user/save', submitData).then(res => {
-          console.log('保存结果:', res)
-          if(res.data.code == 200) {
-            centerDialogVisible.value = false
-            // 重置表单
-            form.value = {
-              no:'',
-              name: '',
-              password: '',
-              age: '',
-              phone: '',
-              sex:'0',
-              roleId: ''
-            }
-            loadPost() // 刷新列表
-            $message.success('操作成功!')
-          } else {
-            $message.error('操作失败!')
-          }
-        }).catch(error => {
-          console.error('保存失败:', error)
-          $message.error('保存失败：' + error.message)
-        })
-      }
-    } else {
-      console.log('error submit!!');
-      return false;
+    if (!valid) return
+    saving.value = true
+    const submitData = {
+      no: form.value.no,
+      name: form.value.name,
+      password: form.value.password,
+      age: form.value.age ? parseInt(form.value.age) : null,
+      sex: form.value.sex !== undefined ? parseInt(form.value.sex) : 1,
+      phone: form.value.phone,
+      roleId: form.value.roleId ? parseInt(form.value.roleId) : 1,
+      isvalid: 'Y'
     }
+    if (form.value.id) submitData.id = form.value.id
+
+    const url = form.value.id ? '/user/update' : '/user/save'
+    axios.post(httpUrl + url, submitData).then(res => {
+      if (res.data.code == 200) {
+        centerDialogVisible.value = false
+        form.value = { id:'', no:'', name:'', password:'', age:'', phone:'', sex:'0', roleId:'1' }
+        loadPost()
+        $message.success('操作成功!')
+      } else {
+        $message.error('操作失败!')
+      }
+    }).catch(error => {
+      $message.error('保存失败：' + (error.message || '网络错误'))
+    }).finally(() => {
+      saving.value = false
+    })
   });
 }
 
@@ -370,7 +333,7 @@ onBeforeMount(() => {
         <template #default="scope">
           <el-tag
               :type="scope.row.roleId=== 0 ? 'danger' : (scope.row.roleId=== 1 ? 'primary' : 'success')"
-              disable-transitions>{{scope.row.roleId=== 0 ? '系统管理员' : (scope.row.roleId=== 1 ? '管理员' : '用户')}}</el-tag>
+              disable-transitions>{{scope.row.roleId=== 0 ? '店长' : (scope.row.roleId=== 1 ? '库存管理员' : '收银员')}}</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="phone" label="电话" width="180"></el-table-column>
@@ -437,7 +400,7 @@ onBeforeMount(() => {
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="centerDialogVisible = false">取 消</el-button>
-          <el-button type="primary" @click="save" :loading="centerDialogVisible">确 定</el-button>
+          <el-button type="primary" @click="save" :loading="saving">确 定</el-button>
         </span>
       </template>
     </el-dialog>

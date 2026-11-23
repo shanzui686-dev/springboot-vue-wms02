@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wms.mapper.LossReportMapper">
+
+    <select id="selectLossPage" resultType="com.wms.entity.LossReportVO">
+        SELECT
+            lr.id,
+            lr.loss_no         AS lossNo,
+            lr.goods_id        AS goodsId,
+            g.name             AS goodsName,
+            lr.batch_id        AS batchId,
+            lr.batch_no        AS batchNo,
+            lr.loss_count      AS lossCount,
+            lr.loss_type       AS lossType,
+            lr.purchase_price  AS purchasePrice,
+            lr.loss_amount     AS lossAmount,
+            lr.reason,
+            lr.status,
+            lr.reporter_id     AS reporterId,
+            u1.name            AS reporterName,
+            lr.auditor_id      AS auditorId,
+            u2.name            AS auditorName,
+            lr.create_time     AS createTime,
+            lr.audit_time      AS auditTime
+        FROM loss_report lr
+        LEFT JOIN goods g ON lr.goods_id = g.id
+        LEFT JOIN user u1 ON lr.reporter_id = u1.id
+        LEFT JOIN user u2 ON lr.auditor_id = u2.id
+        <where>
+            <if test="lossNo != null and lossNo != ''">
+                AND lr.loss_no LIKE CONCAT('%', #{lossNo}, '%')
+            </if>
+            <if test="status != null">
+                AND lr.status = #{status}
+            </if>
+            <if test="lossType != null">
+                AND lr.loss_type = #{lossType}
+            </if>
+            <if test="reporterId != null">
+                AND lr.reporter_id = #{reporterId}
+            </if>
+        </where>
+        ORDER BY lr.create_time DESC, lr.id DESC
+    </select>
+
+</mapper>

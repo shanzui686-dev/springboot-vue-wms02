@@ -82,11 +82,4 @@ public interface ISalesService extends IService<Sales> {
      * @return 退换货商品汇总列表
      */
     List<ProductSalesVO> returnGoodsSales(String startDate, String endDate, Integer userId);
-
-    /**
-     * 收银台直接退款（回滚库存）
-     * @param orderNum 销售单流水号
-     * @return 是否成功
-     */
-    Boolean refund(String orderNum);
 }

@@ -35,16 +35,22 @@
             s.change_amount,
             IFNULL(s.order_num, CONCAT('SO', LPAD(s.id, 8, '0'))) AS order_num,
             s.create_time,
-            CASE
-                WHEN sr.id IS NOT NULL AND sr.status = 1 THEN 2
-                WHEN sr.id IS NOT NULL AND sr.status = 0 THEN 1
-                ELSE 0
-            END AS return_status,
+            IFNULL(srs.return_status, 0) AS return_status,
             s.payment_method,
             s.status
         FROM sales s
         LEFT JOIN user u ON s.user_id = u.id
-        LEFT JOIN sales_return sr ON s.id = sr.sales_id
+        LEFT JOIN (
+            SELECT sales_id,
+                   CASE
+                       WHEN SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) > 0 THEN 1
+                       WHEN SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) > 0 THEN 2
+                       ELSE 0
+                   END AS return_status
+            FROM sales_return
+            WHERE IFNULL(type, 1) = 1
+            GROUP BY sales_id
+        ) srs ON s.id = srs.sales_id
         <where>
             <if test="orderNum != null and orderNum != ''">
                 AND (s.order_num LIKE CONCAT('%', #{orderNum}, '%') 

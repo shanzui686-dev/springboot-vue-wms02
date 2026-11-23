@@ -3,6 +3,7 @@ package com.wms.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wms.common.Log;
+import com.wms.common.RequireRole;
 import com.wms.common.Result;
 import com.wms.entity.ReturnApplyDTO;
 import com.wms.entity.ReturnDetailVO;
@@ -18,6 +19,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/return")
+@RequireRole({0, 2}) // 店长+收银员可处理退换货
 public class SalesReturnController {
 
     @Autowired
@@ -42,12 +44,31 @@ public class SalesReturnController {
     }
 
     /**
-     * 确认退款并回滚库存
+     * 收银台整单提交退款申请（类型=退货、状态=待退款，店长审核后才退款）
+     * @param orderNum 销售单号
+     * @return 退货单ID
+     */
+    @Log("提交退款申请")
+    @PostMapping("/applyWholeOrder")
+    public Result applyWholeOrder(@RequestParam String orderNum) {
+        try {
+            Integer returnId = salesReturnService.applyWholeOrder(orderNum);
+            return Result.suc(returnId).msg("退款申请已提交，待店长审核");
+        } catch (RuntimeException e) {
+            return Result.fail(e.getMessage());
+        } catch (Exception e) {
+            return Result.fail("退款申请提交失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 确认退款并回滚库存（仅店长）
      * @param returnId 退货单ID
      * @return 操作结果
      */
     @Log("确认退款")
     @PostMapping("/confirm")
+    @RequireRole({0}) // 仅店长可确认退款
     public Result confirmRefund(@RequestParam Integer returnId) {
         try {
             Boolean result = salesReturnService.confirmRefund(returnId);
@@ -60,6 +81,29 @@ public class SalesReturnController {
             return Result.fail(e.getMessage());
         } catch (Exception e) {
             return Result.fail("确认退款失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 拒绝退款（仅店长，状态变为已拒绝，不退款不回滚库存）
+     * @param returnId 退货单ID
+     * @return 操作结果
+     */
+    @Log("拒绝退款")
+    @PostMapping("/reject")
+    @RequireRole({0}) // 仅店长可拒绝退款
+    public Result rejectRefund(@RequestParam Integer returnId) {
+        try {
+            Boolean result = salesReturnService.rejectRefund(returnId);
+            if (result) {
+                return Result.suc().msg("已拒绝退款");
+            } else {
+                return Result.fail("拒绝退款失败");
+            }
+        } catch (RuntimeException e) {
+            return Result.fail(e.getMessage());
+        } catch (Exception e) {
+            return Result.fail("拒绝退款失败：" + e.getMessage());
         }
     }
 

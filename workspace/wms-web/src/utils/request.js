@@ -5,7 +5,7 @@ import store from '../srtore'
 
 // 创建axios实例
 const service = axios.create({
-  baseURL: 'http://localhost:8090', // API基础地址
+  baseURL: '/api', // API基础地址（通过vue代理转发到后端8090）
   timeout: 15000, // 请求超时时间
   headers: {
     'Content-Type': 'application/json'

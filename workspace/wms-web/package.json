@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
+    "serve:net": "vue-cli-service serve --mode dotnet",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"
   },

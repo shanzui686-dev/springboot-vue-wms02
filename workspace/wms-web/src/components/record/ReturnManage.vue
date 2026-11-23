@@ -1,101 +1,68 @@
 <template>
   <div class="return-manage-container">
-    <!-- 顶部搜索区 -->
-    <el-card class="search-card" shadow="never">
-      <el-form :inline="true" :model="searchForm" class="search-form">
-        <el-form-item label="退货单号">
-          <el-input
-            v-model="searchForm.returnNo"
-            placeholder="请输入退货单号"
-            clearable
-            style="width: 200px"
-          />
-        </el-form-item>
-        
-        <el-form-item label="状态">
-          <el-select
-            v-model="searchForm.status"
-            placeholder="请选择状态"
-            clearable
-            style="width: 150px"
-          >
-            <el-option label="待退款" :value="0" />
-            <el-option label="已退款" :value="1" />
-          </el-select>
-        </el-form-item>
-        
-        <el-form-item>
-          <el-button type="primary" :icon="Search" @click="handleSearch">
-            查询
-          </el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+    <!-- 页面标题 -->
+    <div style="margin-bottom: 10px; font-size: 16px; font-weight: bold;">销售退货/换货管理</div>
 
-    <!-- 主数据表格 -->
-    <el-card class="table-card" shadow="never">
-      <el-table
-        :data="tableData"
-        border
-        stripe
-        v-loading="loading"
-        style="width: 100%"
-      >
-        <el-table-column prop="returnNo" label="退货单号" width="200" />
-        <el-table-column prop="salesOrderNum" label="原销售单号" width="180" />
-        <el-table-column prop="returnAmount" label="退款总额" width="120">
-          <template #default="{ row }">
-            ¥{{ formatAmount(row.returnAmount) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="returnReason" label="退货原因" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="status" label="状态" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">
-              {{ getStatusText(row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="cashierName" label="原收银员" width="120" />
-        <el-table-column prop="createTime" label="申请时间" width="180">
-          <template #default="{ row }">
-            {{ formatDateTime(row.createTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" fixed="right" width="180" align="center">
-          <template #default="{ row }">
-            <el-button
-              type="primary"
-              size="small"
-              @click="handleViewDetails(row)"
-            >
-              查看明细
-            </el-button>
-            <el-button
-              v-if="row.status === 0"
-              type="danger"
-              size="small"
-              @click="handleConfirmRefund(row)"
-            >
-              确认退款
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+    <!-- 销售退货 ==== -->
+      <el-card class="search-card" shadow="never">
+        <el-form :inline="true" :model="searchForm" class="search-form">
+          <el-form-item label="退货单号">
+            <el-input v-model="searchForm.returnNo" placeholder="请输入退货单号" clearable style="width: 200px" />
+          </el-form-item>
+          <el-form-item label="状态">
+            <el-select v-model="searchForm.status" placeholder="请选择状态" clearable style="width: 150px">
+              <el-option label="待退款" :value="0" />
+              <el-option label="已退款" :value="1" />
+              <el-option label="已拒绝" :value="2" />
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" :icon="Search" @click="handleSearch">查询</el-button>
+            <el-button @click="handleReset">重置</el-button>
+          </el-form-item>
+        </el-form>
+      </el-card>
 
-      <!-- 分页组件 -->
-      <el-pagination
-        v-model:current-page="pageNum"
-        v-model:page-size="pageSize"
-        :page-sizes="[10, 20, 50, 100]"
-        :total="total"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-        class="pagination"
-      />
-    </el-card>
+      <el-card class="table-card" shadow="never">
+        <el-table :data="tableData" border stripe v-loading="loading" style="width: 100%">
+          <el-table-column prop="returnNo" label="退货单号" width="200" />
+          <el-table-column prop="salesOrderNum" label="原销售单号" width="180" />
+          <el-table-column prop="returnAmount" label="退款总额" width="120">
+            <template #default="{ row }">¥{{ formatAmount(row.returnAmount) }}</template>
+          </el-table-column>
+          <el-table-column prop="returnReason" label="退货原因" min-width="180" show-overflow-tooltip />
+          <el-table-column label="类型" width="80" align="center">
+            <template #default="{ row }">
+              <el-tag :type="row.type === 2 ? 'warning' : 'danger'">{{ row.type === 2 ? '换货' : '退货' }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="status" label="状态" width="100" align="center">
+            <template #default="{ row }">
+              <el-tag v-if="row.type !== 2" :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="cashierName" label="原收银员" width="120" />
+          <el-table-column prop="createTime" label="申请时间" width="180">
+            <template #default="{ row }">{{ formatDateTime(row.createTime) }}</template>
+          </el-table-column>
+          <el-table-column label="操作" fixed="right" width="250" align="center">
+            <template #default="{ row }">
+              <el-button type="primary" size="small" @click="handleViewDetails(row)">查看明细</el-button>
+              <template v-if="user.roleId === 0 && row.status === 0 && row.type !== 2">
+                <el-button type="danger" size="small" @click="handleConfirmRefund(row)">确认退款</el-button>
+                <el-button type="warning" size="small" @click="handleRejectRefund(row)">拒绝退款</el-button>
+              </template>
+            </template>
+          </el-table-column>
+        </el-table>
+        <el-pagination
+          v-model:current-page="pageNum" v-model:page-size="pageSize"
+          :page-sizes="[10, 20, 50, 100]" :total="total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange" @current-change="handleCurrentChange" class="pagination"
+        />
+      </el-card>
 
     <!-- 退货明细弹窗 -->
     <el-dialog
@@ -110,14 +77,19 @@
         stripe
         style="width: 100%"
       >
-        <el-table-column prop="goodsName" label="商品名称" min-width="150" />
-        <el-table-column prop="price" label="退货单价" width="120">
+        <el-table-column prop="goodsName" label="退货商品" min-width="150" />
+        <el-table-column v-if="currentReturnType === 2" label="换货商品" min-width="150">
+          <template #default="{ row }">
+            {{ row.exchangeGoodsName || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="price" label="单价" width="120">
           <template #default="{ row }">
             ¥{{ formatAmount(row.price) }}
           </template>
         </el-table-column>
         <el-table-column prop="returnCount" label="退货数量" width="120" align="center" />
-        <el-table-column label="小计金额" width="120">
+        <el-table-column v-if="currentReturnType !== 2" label="小计金额" width="120">
           <template #default="{ row }">
             ¥{{ formatAmount(row.subtotal) }}
           </template>
@@ -127,8 +99,11 @@
       <!-- 总金额汇总 -->
       <div class="detail-summary">
         <el-divider />
-        <div class="summary-text">
+        <div class="summary-text" v-if="currentReturnType !== 2">
           退款总额：<span class="total-amount">¥{{ formatAmount(currentTotalAmount) }}</span>
+        </div>
+        <div class="summary-text" v-else>
+          换货无需退款
         </div>
       </div>
 
@@ -140,7 +115,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, getCurrentInstance } from 'vue'
+import { ref, onMounted, onActivated, getCurrentInstance } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -148,8 +123,12 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 const { proxy } = getCurrentInstance()
 const httpUrl = proxy.$httpUrl
 const $message = ElMessage
+const user = JSON.parse(sessionStorage.getItem('user') || '{}')
 
 // ==================== 数据定义 ====================
+
+// 当前 tab
+const activeTab = ref('sales')
 
 // 搜索表单
 const searchForm = ref({
@@ -169,6 +148,7 @@ const detailDialogVisible = ref(false)
 const detailList = ref([])
 const currentReturnNo = ref('')
 const currentTotalAmount = ref(0)
+const currentReturnType = ref(0)
 
 // ==================== 方法定义 ====================
 
@@ -200,8 +180,9 @@ const formatDateTime = (dateTime) => {
  */
 const getStatusType = (status) => {
   const typeMap = {
-    0: 'warning',  // 待退款 - 黄色
-    1: 'success'   // 已退款 - 绿色
+    0: 'warning',
+    1: 'success',
+    2: 'danger'
   }
   return typeMap[status] || 'info'
 }
@@ -212,7 +193,8 @@ const getStatusType = (status) => {
 const getStatusText = (status) => {
   const textMap = {
     0: '待退款',
-    1: '已退款'
+    1: '已退款',
+    2: '已拒绝'
   }
   return textMap[status] || '未知'
 }
@@ -238,7 +220,11 @@ const loadReturnList = () => {
   if (searchForm.value.status !== null && searchForm.value.status !== undefined) {
     params.status = searchForm.value.status
   }
-  
+  // 收银员只看自己的退换货记录
+  if (user.roleId === 2) {
+    params.userId = user.id
+  }
+
   axios.get(httpUrl + '/return/listPage', { params })
     .then(res => {
       const result = res.data
@@ -299,17 +285,8 @@ const handleCurrentChange = (val) => {
 const handleViewDetails = (row) => {
   currentReturnNo.value = row.returnNo || '未知单号'
   currentTotalAmount.value = row.returnAmount || 0
-  
-  // TODO: 需要后端提供查询退货明细的接口
-  // 这里暂时模拟数据，实际应该调用后端接口
-  // axios.get(httpUrl + '/return/getDetails', { params: { returnId: row.id } })
-  
-  // 模拟数据（临时）
-  detailList.value = []
-  detailDialogVisible.value = true
-  
-  // 实际使用时取消下面的注释并删除上面的模拟代码
-  /*
+  currentReturnType.value = row.type || 1
+
   axios.get(httpUrl + '/return/getDetails', {
     params: { returnId: row.id }
   })
@@ -326,7 +303,6 @@ const handleViewDetails = (row) => {
       console.error('请求失败:', error)
       $message.error('请求失败')
     })
-  */
 }
 
 /**
@@ -370,10 +346,52 @@ const handleConfirmRefund = (row) => {
     })
 }
 
+/**
+ * 拒绝退款（仅店长）：状态变为已拒绝，不退款、不回滚库存
+ */
+const handleRejectRefund = (row) => {
+  ElMessageBox.confirm(
+    `确定拒绝该退货单的退款申请吗？拒绝后将不退款、不回滚库存，状态变为已拒绝。`,
+    '拒绝退款',
+    {
+      confirmButtonText: '确定拒绝',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  )
+    .then(() => {
+      // 调用后端拒绝退款接口
+      axios.post(httpUrl + '/return/reject', null, {
+        params: { returnId: row.id }
+      })
+        .then(res => {
+          const result = res.data
+          if (result.code === 200) {
+            $message.success('已拒绝退款')
+            // 刷新列表
+            loadReturnList()
+          } else {
+            $message.error(result.msg || '拒绝退款失败')
+          }
+        })
+        .catch(error => {
+          console.error('请求失败:', error)
+          $message.error('请求失败')
+        })
+    })
+    .catch(() => {
+      // 用户取消操作
+      $message.info('已取消操作')
+    })
+}
+
 // ==================== 生命周期 ====================
 
 onMounted(() => {
-  // 加载退货单列表
+  loadReturnList()
+})
+
+onActivated(() => {
   loadReturnList()
 })
 </script>

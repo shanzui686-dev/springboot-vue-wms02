@@ -200,7 +200,8 @@ const cancelPwdChange = () => {
           :type="user.roleId === 0 ? 'danger' : (user.roleId === 1 ? 'primary' : 'success')" 
           size="small" 
           style="margin-left: 8px;">
-          {{ user.roleId === 0 ? '系统管理员' : (user.roleId === 1 ? '库存管理员' : '收银员') }}
+
+          {{ user.roleId === 0 ? '店长' : (user.roleId === 1 ? '库存管理员' : '收银员') }}
         </el-tag>
         <el-icon :size="20" style="margin-left: 5px;"><ArrowDown /></el-icon>
       </div>

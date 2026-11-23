@@ -191,7 +191,7 @@
                   @click="handleRefund"
               >
                 <el-icon v-if="!refunding"><RefreshRight /></el-icon>
-                {{ refunding ? '退款中...' : '确认退款' }}
+                {{ refunding ? '提交中...' : '提交退款申请' }}
               </el-button>
             </div>
           </div>
@@ -281,7 +281,7 @@
 </template>
 
 <script setup>
-import { ref, computed, getCurrentInstance } from 'vue'
+import { ref, computed, getCurrentInstance, watch, onMounted } from 'vue'
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ShoppingCart, Search, Delete, CreditCard, Money, Wallet, Coin, Check, RefreshLeft, Loading, RefreshRight } from '@element-plus/icons-vue'
@@ -290,8 +290,22 @@ const { proxy } = getCurrentInstance()
 const httpUrl = proxy.$httpUrl || 'http://localhost:8090'
 const user = JSON.parse(sessionStorage.getItem('user') || '{}')
 
+const CART_KEY = 'wms_cart'
+
 const barcode = ref('')
 const cartItems = ref([])
+// 恢复购物车
+onMounted(() => {
+  try {
+    const saved = sessionStorage.getItem(CART_KEY)
+    if (saved) cartItems.value = JSON.parse(saved)
+  } catch (e) { /* ignore */ }
+})
+// 自动保存购物车
+watch(cartItems, (val) => {
+  sessionStorage.setItem(CART_KEY, JSON.stringify(val))
+}, { deep: true })
+
 const realAmount = ref(0)
 const paymentMethod = ref('cash')
 const checkingOut = ref(false)
@@ -319,12 +333,13 @@ const handleBarcodeSearch = async () => {
     const res = await axios.get(`${httpUrl}/goods/findByBarcode`, { params: { barcode: barcode.value.trim() } })
     if (res.data.code === 200 && res.data.data) {
       const goods = res.data.data
+      const available = goods.count - (goods.reservedCount || 0)
       const item = cartItems.value.find(i => i.id === goods.id)
       if (item) {
-        if (item.count < goods.count) item.count++
+        if (item.count < available) item.count++
         else ElMessage.warning('库存不足')
       } else {
-        if (goods.count > 0) cartItems.value.push({ ...goods, count: 1, maxCount: goods.count })
+        if (available > 0) cartItems.value.push({ ...goods, count: 1, maxCount: available })
         else ElMessage.error('库存不足')
       }
     } else ElMessage.error(res.data.msg || '未找到商品')
@@ -356,7 +371,8 @@ const processCheckout = async (type) => {
   checkingOut.value = true
   try {
     const details = cartItems.value.map(i => ({ goodsId: i.id, count: i.count, price: i.retailPrice, subtotal: calculateSubtotal(i) }))
-    const data = { userId: user.id, totalAmount: totalAmount.value, realAmount: realAmount.value, changeAmount: changeAmount.value, details }
+    const payMethod = paymentMethod.value === 'cash' ? 1 : 2
+    const data = { userId: user.id, totalAmount: totalAmount.value, realAmount: realAmount.value, changeAmount: changeAmount.value, paymentMethod: payMethod, details }
     const res = await axios.post(`${httpUrl}/sales/checkout`, data)
 
     if (res.data.code === 200) {
@@ -379,7 +395,7 @@ const processCheckout = async (type) => {
   checkingOut.value = false
 }
 
-// 退款逻辑
+// 提交退款申请逻辑（不直接退款，需店长在退换货处理中审核）
 const handleRefund = async () => {
   if (!refundOrderId.value.trim()) {
     return ElMessage.warning('请输入销售单流水号')
@@ -388,10 +404,10 @@ const handleRefund = async () => {
   try {
     // 二次确认
     await ElMessageBox.confirm(
-        `确认对销售单【${refundOrderId.value}】进行退款？退款后将回滚库存。`,
-        '退款确认',
+        `确认对销售单【${refundOrderId.value}】提交退货申请？提交后需店长在退换货处理中审核退款。`,
+        '提交退款申请',
         {
-          confirmButtonText: '确认退款',
+          confirmButtonText: '提交申请',
           cancelButtonText: '取消',
           type: 'warning',
         }
@@ -399,20 +415,20 @@ const handleRefund = async () => {
 
     refunding.value = true
 
-    // 调用后端退款接口
-    const res = await axios.post(`${httpUrl}/sales/refund`, null, {
+    // 调用后端提交退款申请接口（生成待退款退货单）
+    const res = await axios.post(`${httpUrl}/return/applyWholeOrder`, null, {
       params: { orderNum: refundOrderId.value.trim() }
     })
 
     if (res.data.code === 200) {
-      ElMessage.success('退款成功，库存已回滚')
+      ElMessage.success('退款申请已提交，待店长审核')
       refundOrderId.value = ''
     } else {
-      ElMessage.error(res.data.msg || '退款失败')
+      ElMessage.error(res.data.msg || '退款申请提交失败')
     }
   } catch (e) {
     if (e !== 'cancel') {
-      ElMessage.error(e.response?.data?.msg || '退款异常')
+      ElMessage.error(e.response?.data?.msg || '申请提交异常')
     }
   } finally {
     refunding.value = false

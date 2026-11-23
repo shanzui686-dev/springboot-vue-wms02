@@ -1,8 +1,8 @@
 <template>
   <div class="dashboard-container">
-    <!-- 顶部统计卡片 -->
+    <!-- 顶部统计卡片 — 第1行 -->
     <el-row :gutter="20" class="stats-cards">
-      <el-col :span="6">
+      <el-col :span="8">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
             <div class="stat-icon sales-icon">
@@ -18,7 +18,7 @@
         </el-card>
       </el-col>
 
-      <el-col :span="6">
+      <el-col :span="8">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
             <div class="stat-icon profit-icon">
@@ -34,7 +34,42 @@
         </el-card>
       </el-col>
 
-      <el-col :span="6">
+      <el-col :span="8">
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-content">
+            <div class="stat-icon net-icon">
+              <el-icon :size="40"><Coin /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">净利润（毛利-损耗）</div>
+              <div class="stat-value">
+                <count-to :end-val="netProfit" :duration="2000" prefix="¥" />
+              </div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <!-- 顶部统计卡片 — 第2行 -->
+    <el-row :gutter="20" class="stats-cards">
+      <el-col :span="8">
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-content">
+            <div class="stat-icon loss-icon">
+              <el-icon :size="40"><CircleClose /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-label">今日损耗</div>
+              <div class="stat-value loss-value">
+                <count-to :end-val="todayLoss" :duration="2000" prefix="¥" />
+              </div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+
+      <el-col :span="8">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
             <div class="stat-icon warning-icon">
@@ -50,7 +85,7 @@
         </el-card>
       </el-col>
 
-      <el-col :span="6">
+      <el-col :span="8">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
             <div class="stat-icon order-icon">
@@ -98,15 +133,15 @@
         <el-card class="table-card" shadow="hover">
           <template #header>
             <div class="card-header">
-              <span>库存预警与补货建议</span>
+              <span>补货建议</span>
             </div>
           </template>
           <el-table :data="warningList" style="width: 100%" max-height="350">
             <el-table-column prop="name" label="商品名称" width="150" />
-            <el-table-column prop="count" label="当前库存" width="100">
+            <el-table-column label="当前库存" width="110">
               <template #default="{ row }">
-                <span :class="{ 'danger-text': row.count < row.minCount }">
-                  {{ row.count }}
+                <span :class="{ 'danger-text': (row.count - (row.reservedCount||0)) < row.minCount }">
+                  {{ row.count - (row.reservedCount||0) }}<span v-if="row.reservedCount" style="color:#909399;font-size:11px"> (预占{{row.reservedCount}})</span>
                 </span>
               </template>
             </el-table-column>
@@ -126,7 +161,7 @@
             </el-table-column>
             <el-table-column label="状态">
               <template #default="{ row }">
-                <el-tag v-if="row.count < row.minCount" type="danger" size="small">库存不足</el-tag>
+                <el-tag v-if="(row.count - (row.reservedCount||0)) < row.minCount" type="danger" size="small">库存不足</el-tag>
                 <el-tag v-else type="success" size="small">正常</el-tag>
               </template>
             </el-table-column>
@@ -168,11 +203,15 @@
   </div>
 </template>
 
+<script>
+export default { name: 'Dashboard' }
+</script>
+
 <script setup>
-import { ref, onMounted, nextTick, getCurrentInstance } from 'vue'
+import { ref, onMounted, onActivated, nextTick, getCurrentInstance } from 'vue'
 import * as echarts from 'echarts'
 import axios from 'axios'
-import { Money, TrendCharts, Warning, ShoppingCart } from '@element-plus/icons-vue'
+import { Money, TrendCharts, Warning, ShoppingCart, Coin, CircleClose } from '@element-plus/icons-vue'
 
 const { proxy } = getCurrentInstance()
 const httpUrl = proxy.$httpUrl
@@ -180,12 +219,16 @@ const httpUrl = proxy.$httpUrl
 // 统计数据
 const todaySales = ref(0)
 const todayProfit = ref(0)
+const todayLoss = ref(0)
+const netProfit = ref(0)
 const warningCount = ref(0)
 const todayOrders = ref(0)
 
 // 图表引用
 const trendChartRef = ref(null)
 const categoryChartRef = ref(null)
+let trendChartInstance = null
+let categoryChartInstance = null
 
 // 表格数据
 const warningList = ref([])
@@ -205,6 +248,12 @@ const CountTo = {
   },
   mounted() {
     this.animateNumber()
+  },
+  watch: {
+    endVal() {
+      this.displayValue = 0
+      this.animateNumber()
+    }
   },
   methods: {
     animateNumber() {
@@ -240,8 +289,10 @@ const CountTo = {
 // 初始化趋势图
 const initTrendChart = (data) => {
   if (!trendChartRef.value) return
-  
-  const chart = echarts.init(trendChartRef.value)
+
+  if (trendChartInstance) trendChartInstance.dispose()
+  trendChartInstance = echarts.init(trendChartRef.value)
+  const chart = trendChartInstance
   
   const dates = data.map(item => item.date)
   const salesData = data.map(item => item.totalAmount || 0)
@@ -316,8 +367,10 @@ const initTrendChart = (data) => {
 // 初始化分类饼图
 const initCategoryChart = (data) => {
   if (!categoryChartRef.value) return
-  
-  const chart = echarts.init(categoryChartRef.value)
+
+  if (categoryChartInstance) categoryChartInstance.dispose()
+  categoryChartInstance = echarts.init(categoryChartRef.value)
+  const chart = categoryChartInstance
   
   const pieData = data.map(item => ({
     name: item.categoryName,
@@ -372,17 +425,21 @@ const initCategoryChart = (data) => {
 const loadStatsData = async () => {
   try {
     const res = await axios.get(httpUrl + '/stats/todaySummary')
+    console.log('今日统计接口返回:', res.data)
     if (res.data.code === 200) {
-      todaySales.value = res.data.data.todaySales || 0
-      todayProfit.value = res.data.data.todayProfit || 0
-      todayOrders.value = res.data.data.todayOrders || 0
+      const d = res.data.data
+      todaySales.value = d.todaySales || 0
+      todayProfit.value = d.todayProfit || 0
+      todayLoss.value = d.todayLoss || 0
+      netProfit.value = d.netProfit || 0
+      todayOrders.value = d.todayOrders || 0
+    } else {
+      console.error('今日统计接口返回错误:', res.data.msg)
     }
   } catch (error) {
-    // 接口未实现时静默处理，使用默认值 0
-    console.warn('统计数据接口暂未实现，使用默认值')
-    todaySales.value = 0
-    todayProfit.value = 0
-    todayOrders.value = 0
+    console.error('加载统计数据失败:', error)
+    console.error('错误详情:', error.response?.data)
+    todaySales.value = 0; todayProfit.value = 0; todayLoss.value = 0; netProfit.value = 0; todayOrders.value = 0
   }
 }
 
@@ -464,8 +521,8 @@ const loadTurnoverList = async () => {
   }
 }
 
-// 组件挂载时加载数据
-onMounted(async () => {
+// 加载所有数据
+const loadAllData = async () => {
   await loadStatsData()
   await Promise.all([
     loadTrendData(),
@@ -473,7 +530,10 @@ onMounted(async () => {
     loadWarningList(),
     loadTurnoverList()
   ])
-})
+}
+
+onMounted(() => { loadAllData() })
+onActivated(() => { loadAllData() })
 </script>
 
 <style scoped>
@@ -529,6 +589,20 @@ onMounted(async () => {
 
 .order-icon {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.net-icon {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  color: #409EFF;
+}
+
+.loss-icon {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+  color: #F56C6C;
+}
+
+.loss-value {
+  color: #F56C6C !important;
 }
 
 .stat-info {

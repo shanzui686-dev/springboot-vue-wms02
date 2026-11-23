@@ -157,8 +157,12 @@ const handleLogin = () => {
             const expireMsg = rememberMe ? '7天内免登录' : '12小时有效'
             ElMessage.success(`欢迎回来，${userData.name}！Token${expireMsg}`)
 
-            // 跳转到系统首页
-            router.push('/Home')
+            // 根据角色跳转到不同首页
+            if (userData.roleId === 0) {
+              router.push('/Dashboard') // 店长直接跳转到销售统计
+            } else {
+              router.push('/Home') // 其他角色跳转到首页
+            }
           } else {
             ElMessage.error(res.data?.msg || '登录失败，请重试')
           }

@@ -140,22 +140,5 @@ public class SalesController {
                                    @RequestParam(required = false) Integer userId) {
         return Result.suc(salesService.returnGoodsSales(startDate, endDate, userId));
     }
-
-    /**
-     * 收银台直接退款接口
-     * @param orderNum 销售单流水号
-     * @return 退款结果
-     */
-    @Log("销售退款")
-    @PostMapping("/refund")
-    public Result refund(@RequestParam String orderNum) {
-        try {
-            Boolean result = salesService.refund(orderNum);
-            return result ? Result.suc().msg("退款成功，库存已回滚") : Result.fail("退款失败");
-        } catch (RuntimeException e) {
-            return Result.fail(e.getMessage());
-        } catch (Exception e) {
-            return Result.fail("退款异常：" + e.getMessage());
-        }
-    }
 }
+

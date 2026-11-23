@@ -12,7 +12,7 @@ import store from './srtore'
 const app = createApp(App)
 
 // 配置全局 API 地址
-app.config.globalProperties.$httpUrl = 'http://localhost:8090'
+app.config.globalProperties.$httpUrl = '/api'
 
 // 配置全局 axios 和 message
 app.config.globalProperties.$axios = axios

@@ -143,7 +143,7 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseMapper, Purchase> i
     }
 
     /**
-     * 创建采购单（计算总金额，自动生成批次号，默认状态为待审核）
+     * 创建采购单（计算总金额，自动生成批次号，默认状态为待入库）
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -196,7 +196,7 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseMapper, Purchase> i
         }
 
         purchase.setTotalAmount(totalAmount);
-        purchase.setStatus(0); // 状态：待审核
+        purchase.setStatus(1); // 状态：待入库（免审核，创建即待入库）
 
         // 自动生成采购单号（如果前端未传）
         if (purchase.getPurchaseNo() == null || purchase.getPurchaseNo().isEmpty()) {
@@ -227,23 +227,6 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseMapper, Purchase> i
     }
 
     /**
-     * 店长审核采购单（状态 0→1）
-     */
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public boolean audit(Integer purchaseId) {
-        Purchase purchase = this.getById(purchaseId);
-        if (purchase == null) {
-            throw new RuntimeException("采购单不存在");
-        }
-        if (purchase.getStatus() != 0) {
-            throw new RuntimeException("只有待审核状态的采购单才能审核，当前状态：" + purchase.getStatus());
-        }
-        purchase.setStatus(1); // 已审核待入库
-        return this.updateById(purchase);
-    }
-
-    /**
      * 确认入库（店长选择仓库+填写实际入库数量 → 创建 goods_batch + 更新库存）
      */
     @Transactional(rollbackFor = Exception.class)
@@ -265,9 +248,9 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseMapper, Purchase> i
             throw new RuntimeException("采购单不存在");
         }
 
-        // 2. 检查状态：必须是"已审核待入库"
+        // 2. 检查状态：必须是"待入库"
         if (purchase.getStatus() != 1) {
-            throw new RuntimeException("只有已审核状态的采购单才能入库，当前状态：" + purchase.getStatus());
+            throw new RuntimeException("只有待入库状态的采购单才能入库，当前状态：" + purchase.getStatus());
         }
 
         // 3. 查询采购明细

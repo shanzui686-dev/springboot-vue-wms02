@@ -43,7 +43,7 @@
                 AND sr.order_num LIKE CONCAT('%', #{returnNo}, '%')
             </if>
             <if test="status != null">
-                AND sr.status = #{status}
+                AND IFNULL(sr.type, 1) = 1 AND sr.status = #{status}
             </if>
             <if test="userId != null">
                 AND s.user_id = #{userId}

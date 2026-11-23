@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wms.mapper.PurchaseReturnMapper">
+
+    <select id="selectPage" resultType="com.wms.entity.PurchaseReturnVO">
+        SELECT
+            pr.id,
+            pr.return_no         AS returnNo,
+            pr.purchase_id       AS purchaseId,
+            p.purchase_no        AS purchaseNo,
+            pr.goods_id          AS goodsId,
+            pr.batch_id          AS batchId,
+            pr.batch_no          AS batchNo,
+            pr.return_count      AS returnCount,
+            (pr.return_count * COALESCE(gb.purchase_price, 0)) AS returnAmount,
+            pr.reason,
+            pr.status,
+            pr.creator_id        AS creatorId,
+            u1.name              AS creatorName,
+            pr.auditor_id        AS auditorId,
+            u2.name              AS auditorName,
+            g.name               AS goodsName,
+            pr.create_time       AS createTime,
+            pr.audit_time        AS auditTime
+        FROM purchase_return pr
+        LEFT JOIN purchase p ON pr.purchase_id = p.id
+        LEFT JOIN user u1 ON pr.creator_id = u1.id
+        LEFT JOIN user u2 ON pr.auditor_id = u2.id
+        LEFT JOIN goods g ON pr.goods_id = g.id
+        LEFT JOIN goods_batch gb ON pr.batch_id = gb.id
+        <where>
+            <if test="returnNo != null and returnNo != ''">
+                AND pr.return_no LIKE CONCAT('%', #{returnNo}, '%')
+            </if>
+            <if test="status != null">
+                AND pr.status = #{status}
+            </if>
+        </where>
+        ORDER BY pr.create_time DESC, pr.id DESC
+    </select>
+
+</mapper>

@@ -309,7 +309,7 @@ onBeforeMount(() => {
       <template #default="scope">
         <el-tag
             :type="scope.row.roleId=== 0 ? 'danger' : (scope.row.roleId=== 1 ? 'primary' : 'success')"
-            disable-transitions>{{scope.row.roleId=== 0 ? '系统管理员' : (scope.row.roleId=== 1 ? '库存管理员' : '收银员')}}</el-tag>
+            disable-transitions>{{scope.row.roleId=== 0 ? '店长' : (scope.row.roleId=== 1 ? '库存管理员' : '收银员')}}</el-tag>
       </template>
     </el-table-column>
     <el-table-column prop="phone" label="电话" width="180"></el-table-column>

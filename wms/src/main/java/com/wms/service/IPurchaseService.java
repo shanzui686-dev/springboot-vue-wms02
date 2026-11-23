@@ -57,13 +57,6 @@ public interface IPurchaseService extends IService<Purchase> {
     boolean inbound(InboundDTO inboundDTO);
 
     /**
-     * 店长审核采购单（状态 0→1）
-     * @param purchaseId 采购单ID
-     * @return 是否成功
-     */
-    boolean audit(Integer purchaseId);
-
-    /**
      * 采购退货（按批次FIFO扣减库存）
      * @param purchaseId 采购单ID
      * @return 是否成功

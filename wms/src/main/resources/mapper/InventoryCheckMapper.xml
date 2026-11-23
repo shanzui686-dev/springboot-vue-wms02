@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wms.mapper.InventoryCheckMapper">
+
+    <!-- 分页查询盘点单（连表查询仓库名称） -->
+    <select id="selectCheckPage" resultType="com.wms.entity.InventoryCheckVO">
+        SELECT
+            ic.id,
+            ic.check_no AS checkNo,
+            ic.storage_id AS storageId,
+            s.name AS storageName,
+            ic.creator_id AS creatorId,
+            ic.status,
+            ic.create_time AS createTime,
+            ic.remark
+        FROM inventory_check ic
+        LEFT JOIN storage s ON ic.storage_id = s.id
+        <where>
+            <if test="checkNo != null and checkNo != ''">
+                AND ic.check_no LIKE CONCAT('%', #{checkNo}, '%')
+            </if>
+            <if test="status != null">
+                AND ic.status = #{status}
+            </if>
+        </where>
+        ORDER BY ic.create_time DESC, ic.id DESC
+    </select>
+
+</mapper>
